@@ -1,6 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ai_difficulty.dart';
+
+/// Theme preference that maps to [ThemeMode].
+enum ThemePreference { system, light, dark }
+
+extension ThemePreferenceExtension on ThemePreference {
+  String get label {
+    switch (this) {
+      case ThemePreference.system:
+        return 'System';
+      case ThemePreference.light:
+        return 'Light';
+      case ThemePreference.dark:
+        return 'Dark';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case ThemePreference.system:
+        return Icons.brightness_auto;
+      case ThemePreference.light:
+        return Icons.light_mode;
+      case ThemePreference.dark:
+        return Icons.dark_mode;
+    }
+  }
+
+  ThemeMode get themeMode {
+    switch (this) {
+      case ThemePreference.system:
+        return ThemeMode.system;
+      case ThemePreference.light:
+        return ThemeMode.light;
+      case ThemePreference.dark:
+        return ThemeMode.dark;
+    }
+  }
+}
+
+const _themePreferenceKey = 'theme_preference';
+
+class ThemeNotifier extends StateNotifier<ThemePreference> {
+  ThemeNotifier() : super(ThemePreference.system) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getString(_themePreferenceKey);
+    if (stored != null && mounted) {
+      for (final pref in ThemePreference.values) {
+        if (pref.name == stored) {
+          state = pref;
+          return;
+        }
+      }
+    }
+  }
+
+  Future<void> setTheme(ThemePreference preference) async {
+    state = preference;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_themePreferenceKey, preference.name);
+  }
+}
+
+final themeProvider =
+    StateNotifierProvider<ThemeNotifier, ThemePreference>(
+  (ref) => ThemeNotifier(),
+);
 
 /// Available player colors for selection.
 class PlayerColor {

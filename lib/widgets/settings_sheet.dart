@@ -53,6 +53,31 @@ class SettingsSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
 
+          // Theme selector
+          _SettingsTile(
+            icon: ref.watch(themeProvider).icon,
+            title: 'Theme',
+            subtitle: ref.watch(themeProvider).label,
+            trailing: SegmentedButton<ThemePreference>(
+              segments: ThemePreference.values.map((pref) {
+                return ButtonSegment(
+                  value: pref,
+                  label: Text(pref.label, style: const TextStyle(fontSize: 12)),
+                  icon: Icon(pref.icon, size: 16),
+                );
+              }).toList(),
+              selected: {ref.watch(themeProvider)},
+              onSelectionChanged: (selected) {
+                ref.read(themeProvider.notifier).setTheme(selected.first);
+              },
+              style: ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          ),
+          const Divider(height: 1),
+
           // Sound toggle
           _SettingsTile(
             icon: settings.soundEnabled

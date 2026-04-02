@@ -7,6 +7,15 @@ class SuperFarmerTheme {
   static const _earthBrown = Color(0xFF5D4037);
   static const _skyBlue = Color(0xFF81D4FA);
 
+  // Night farm palette
+  static const _nightForestGreen = Color(0xFF1B2E1B);
+  static const _moonlitBlue = Color(0xFF2C3E50);
+  static const _nightSkyBlue = Color(0xFF34495E);
+  static const _starAmber = Color(0xFFFFB74D);
+  static const _nightGreenLight = Color(0xFF4E7A4E);
+  static const _nightSurface = Color(0xFF162016);
+  static const _nightCard = Color(0xFF1E2E1E);
+
   // Light theme color scheme
   static final ColorScheme _lightColorScheme = ColorScheme.fromSeed(
     seedColor: _farmGreen,
@@ -17,15 +26,15 @@ class SuperFarmerTheme {
     brightness: Brightness.light,
   );
 
-  // Dark theme color scheme
+  // Dark theme color scheme — night farm
   static final ColorScheme _darkColorScheme = ColorScheme.fromSeed(
-    seedColor: _farmGreen,
-    primary: _farmGreenLight,
-    secondary: const Color(0xFFBCAAA4),
-    tertiary: _skyBlue,
-    surface: const Color(0xFF1E1E1E),
-    onSurface: const Color(0xFFE0E0E0),
-    onPrimary: Colors.black,
+    seedColor: _nightForestGreen,
+    primary: _nightGreenLight,
+    secondary: _starAmber,
+    tertiary: _moonlitBlue,
+    surface: _nightCard,
+    onSurface: const Color(0xFFD5DDD5),
+    onPrimary: Colors.white,
     brightness: Brightness.dark,
   );
 
@@ -55,28 +64,47 @@ class SuperFarmerTheme {
 
   static ThemeData get darkTheme => ThemeData(
         colorScheme: _darkColorScheme,
-        scaffoldBackgroundColor: const Color(0xFF121212),
+        scaffoldBackgroundColor: _nightSurface,
         appBarTheme: AppBarTheme(
-          backgroundColor: const Color(0xFF1E1E1E),
-          foregroundColor: const Color(0xFFE0E0E0),
+          backgroundColor: _nightForestGreen,
+          foregroundColor: const Color(0xFFD5DDD5),
           elevation: 0,
-          surfaceTintColor: _farmGreenLight.withValues(alpha: 0.1),
+          surfaceTintColor: _nightGreenLight.withValues(alpha: 0.1),
         ),
         navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: const Color(0xFF1E1E1E),
-          indicatorColor: _farmGreenLight.withValues(alpha: 0.3),
+          backgroundColor: _nightForestGreen,
+          indicatorColor: _nightGreenLight.withValues(alpha: 0.3),
         ),
         cardTheme: CardThemeData(
           elevation: 1,
-          color: const Color(0xFF1E1E1E),
-          surfaceTintColor: _farmGreenLight.withValues(alpha: 0.05),
+          color: _nightCard,
+          surfaceTintColor: _nightGreenLight.withValues(alpha: 0.05),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
         floatingActionButtonTheme: FloatingActionButtonThemeData(
-          backgroundColor: _farmGreenLight,
-          foregroundColor: Colors.black,
+          backgroundColor: _starAmber,
+          foregroundColor: _nightForestGreen,
+        ),
+        switchTheme: SwitchThemeData(
+          thumbColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) return _starAmber;
+            return null;
+          }),
+          trackColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return _starAmber.withValues(alpha: 0.4);
+            }
+            return null;
+          }),
+        ),
+        sliderTheme: SliderThemeData(
+          activeTrackColor: _starAmber,
+          thumbColor: _starAmber,
+        ),
+        dividerTheme: DividerThemeData(
+          color: _nightGreenLight.withValues(alpha: 0.2),
         ),
       );
 
