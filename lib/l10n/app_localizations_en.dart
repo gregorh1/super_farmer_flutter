@@ -604,4 +604,69 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navStats => 'Stats';
+
+  // --- Replay feature ---
+
+  @override
+  String get replays => 'Replays';
+
+  @override
+  String get noReplaysYet => 'No replays yet';
+
+  @override
+  String get noReplaysYetSubtitle => 'Complete a game to see replays here.';
+
+  @override
+  String get replayViewer => 'Replay Viewer';
+
+  @override
+  String turnN(int number) => 'Turn $number';
+
+  @override
+  String turnOfTotal(int current, int total) => 'Turn $current of $total';
+
+  @override
+  String get speed => 'Speed';
+
+  @override
+  String get exportReplay => 'Export Replay';
+
+  @override
+  String get importReplay => 'Import Replay';
+
+  @override
+  String get replayCopied => 'Replay JSON copied to clipboard';
+
+  @override
+  String get replayImported => 'Replay imported successfully';
+
+  @override
+  String get replayImportError => 'Invalid replay data';
+
+  @override
+  String get deleteReplay => 'Delete Replay';
+
+  @override
+  String get deleteReplayConfirm => 'Delete this replay?';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get bred => 'Bred';
+
+  @override
+  String get lostLabel => 'Lost';
+
+  @override
+  String get traded => 'Traded';
+
+  @override
+  String get pasteReplayJson => 'Paste replay JSON';
+
+  @override
+  String get import_ => 'Import';
+
+  @override
+  String get watchReplay => 'Watch Replay';
 }

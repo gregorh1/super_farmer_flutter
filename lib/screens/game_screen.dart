@@ -11,6 +11,7 @@ import '../models/exchange.dart';
 import '../models/game_record.dart';
 import '../providers/achievement_provider.dart';
 import '../providers/game_provider.dart';
+import '../providers/replay_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/stats_provider.dart';
 import '../services/audio_service.dart';
@@ -98,11 +99,17 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
     // Compute and execute trades with delays between each
     final trades = notifier.computeAiTrades();
+    final recorder = ref.read(replayRecorderProvider);
     if (trades.isNotEmpty) {
       for (final trade in trades) {
         await Future.delayed(const Duration(milliseconds: 600));
         if (!mounted) return;
         if (ref.read(gameProvider).winner != null) break;
+        recorder.recordTrade(ExchangeRate(
+            from: trade.from,
+            fromCount: trade.fromCount,
+            to: trade.to,
+            toCount: trade.toCount));
         notifier.trade(trade);
       }
       notifier.setAiTradesMade(trades);
@@ -122,6 +129,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
     // End turn
     await Future.delayed(const Duration(milliseconds: 400));
     if (!mounted) return;
+    // Finalize turn recording before advancing
+    recorder.finalizeTurn(ref.read(gameProvider));
     notifier.setAiThinking(false);
     notifier.nextTurn();
     _aiTurnInProgress = false;
@@ -184,6 +193,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
     ref
         .read(gameProvider.notifier)
         .startGame(names, colors, isAiList, aiDifficulties);
+
+    // Start recording the game replay
+    ref.read(replayRecorderProvider).startRecording(names, colors);
+
     _transitionController.forward(from: 0.0);
 
     // If first player is AI, trigger their turn after the transition
@@ -205,16 +218,21 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
       if (next.winner != null && (prev?.winner == null)) {
         _recordGameResult(next);
-        ref.read(audioServiceProvider).play(GameSound.victory);
-        AudioService.hapticHeavy();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _showWinnerDialog(next.winner!);
         });
       }
 
-      // Play sounds for game events
+      // Play sounds for game events and record dice roll for replay
       final event = next.lastEvent;
       if (event != null && event != prev?.lastEvent) {
+        // Record for replay
+        ref.read(replayRecorderProvider).recordDiceRoll(
+              event,
+              next.turnNumber,
+              next.currentPlayerIndex,
+              next.currentPlayer?.name ?? '',
+            );
         final audio = ref.read(audioServiceProvider);
 
         // Attack sounds + haptic
@@ -274,6 +292,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
               IconButton(
                 icon: const Icon(Icons.restart_alt),
                 onPressed: () {
+                  ref.read(replayRecorderProvider).stopRecording();
                   ref.read(gameProvider.notifier).resetGame();
                   _transitionController.forward(from: 0.0);
                 },
@@ -448,6 +467,9 @@ class _GameScreenState extends ConsumerState<GameScreen>
                     ? () {} // AI ends turn automatically
                     : () {
                         ref.read(audioServiceProvider).play(GameSound.tap);
+                        // Finalize the turn recording before advancing
+                        ref.read(replayRecorderProvider).finalizeTurn(
+                              ref.read(gameProvider));
                         ref.read(gameProvider.notifier).nextTurn();
                       },
                 isAiTurn: isAiTurn,
@@ -468,6 +490,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
                 ? (_) {} // AI trades automatically
                 : (rate) {
                     ref.read(audioServiceProvider).play(GameSound.tap);
+                    ref.read(replayRecorderProvider).recordTrade(rate);
                     ref.read(gameProvider.notifier).trade(rate);
                   },
             isAiTurn: isAiTurn,
@@ -661,6 +684,14 @@ class _GameScreenState extends ConsumerState<GameScreen>
       winnerIsAi: winnerHerd.isAi,
     );
     ref.read(statsProvider.notifier).addRecord(record);
+
+    // Finalize the last turn and save the replay
+    final recorder = ref.read(replayRecorderProvider);
+    recorder.finalizeTurn(game);
+    final replay = recorder.buildReplay(game.winner!, game.turnNumber);
+    if (replay != null) {
+      ref.read(replayStorageProvider.notifier).addReplay(replay);
+    }
   }
 
   void _showWinnerDialog(String winnerName) {

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/l10n_helpers.dart';
 import '../models/achievement.dart';
 import '../models/game_record.dart';
+import '../models/game_replay.dart';
 import '../providers/achievement_provider.dart';
+import '../providers/replay_provider.dart';
 import '../providers/stats_provider.dart';
 
 class StatsScreen extends ConsumerWidget {
@@ -17,14 +21,20 @@ class StatsScreen extends ConsumerWidget {
     final stats = ref.watch(gameStatsProvider);
 
     final achievementStates = ref.watch(achievementProvider);
+    final replays = ref.watch(replayStorageProvider);
 
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
         appBar: AppBar(
           title: Text(l10n.statistics),
           centerTitle: true,
           actions: [
+            IconButton(
+              icon: const Icon(Icons.file_download_outlined),
+              tooltip: l10n.importReplay,
+              onPressed: () => _showImportDialog(context, ref),
+            ),
             if (records.isNotEmpty)
               IconButton(
                 icon: const Icon(Icons.delete_outline),
@@ -40,26 +50,86 @@ class StatsScreen extends ConsumerWidget {
               Tab(text: l10n.history),
               Tab(text: l10n.leaderboard),
               Tab(text: l10n.achievements),
+              Tab(text: l10n.replays),
             ],
           ),
         ),
-        body: records.isEmpty
+        body: records.isEmpty && replays.isEmpty
             ? TabBarView(
                 children: [
                   _EmptyState(),
                   _EmptyState(),
                   _EmptyState(),
                   _AchievementsTab(states: achievementStates),
+                  _ReplaysEmptyState(),
                 ],
               )
             : TabBarView(
                 children: [
-                  _OverviewTab(stats: stats),
-                  _HistoryTab(records: records),
-                  _LeaderboardTab(stats: stats),
+                  records.isEmpty
+                      ? _EmptyState()
+                      : _OverviewTab(stats: stats),
+                  records.isEmpty
+                      ? _EmptyState()
+                      : _HistoryTab(records: records),
+                  records.isEmpty
+                      ? _EmptyState()
+                      : _LeaderboardTab(stats: stats),
                   _AchievementsTab(states: achievementStates),
+                  replays.isEmpty
+                      ? _ReplaysEmptyState()
+                      : _ReplaysTab(replays: replays),
                 ],
               ),
+      ),
+    );
+  }
+
+  void _showImportDialog(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.importReplay),
+        content: TextField(
+          controller: controller,
+          maxLines: 5,
+          decoration: InputDecoration(
+            hintText: l10n.pasteReplayJson,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              try {
+                final replay = GameReplay.importJson(controller.text.trim());
+                ref.read(replayStorageProvider.notifier).importReplay(replay);
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(l10n.replayImported),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              } catch (_) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(l10n.replayImportError),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: Text(l10n.import_),
+          ),
+        ],
       ),
     );
   }
@@ -713,6 +783,192 @@ class _AchievementListTile extends StatelessWidget {
                 ),
               )
             : null,
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Replays tab
+// ---------------------------------------------------------------------------
+
+class _ReplaysEmptyState extends StatelessWidget {
+  const _ReplaysEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.replay,
+                size: 64,
+                color: theme.colorScheme.primary.withValues(alpha: 0.4)),
+            const SizedBox(height: 16),
+            Text(
+              l10n.noReplaysYet,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.noReplaysYetSubtitle,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReplaysTab extends ConsumerWidget {
+  const _ReplaysTab({required this.replays});
+  final List<GameReplay> replays;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final sorted = List<GameReplay>.from(replays)
+      ..sort((a, b) => b.date.compareTo(a.date));
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: sorted.length,
+      itemBuilder: (context, index) {
+        final r = sorted[index];
+        final dateStr = '${r.date.day}/${r.date.month}/${r.date.year}';
+
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: theme.colorScheme.primaryContainer,
+              child: const Icon(Icons.replay),
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.emoji_events,
+                    size: 16, color: Colors.amber.shade700),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    r.winnerName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            subtitle: Text(
+              '${r.playerNames.join(", ")} - ${l10n.nTurns(r.totalTurns)}',
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  dateStr,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color:
+                        theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                PopupMenuButton<String>(
+                  itemBuilder: (ctx) => [
+                    PopupMenuItem(
+                      value: 'watch',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.play_arrow, size: 18),
+                          const SizedBox(width: 8),
+                          Text(l10n.watchReplay),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'export',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.share, size: 18),
+                          const SizedBox(width: 8),
+                          Text(l10n.exportReplay),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 18, color: Colors.red.shade400),
+                          const SizedBox(width: 8),
+                          Text(l10n.deleteReplay,
+                              style: TextStyle(color: Colors.red.shade400)),
+                        ],
+                      ),
+                    ),
+                  ],
+                  onSelected: (action) {
+                    switch (action) {
+                      case 'watch':
+                        context.go('/replay/${r.id}');
+                      case 'export':
+                        Clipboard.setData(
+                            ClipboardData(text: r.exportJson()));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.replayCopied),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      case 'delete':
+                        _confirmDelete(context, ref, r);
+                    }
+                  },
+                ),
+              ],
+            ),
+            onTap: () => context.go('/replay/${r.id}'),
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmDelete(
+      BuildContext context, WidgetRef ref, GameReplay replay) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.deleteReplay),
+        content: Text(l10n.deleteReplayConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            onPressed: () {
+              ref.read(replayStorageProvider.notifier).deleteReplay(replay.id);
+              Navigator.pop(ctx);
+            },
+            child: Text(l10n.delete),
+          ),
+        ],
       ),
     );
   }

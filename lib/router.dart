@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'screens/achievements_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/game_screen.dart';
+import 'screens/replay_screen.dart';
 import 'screens/rules_screen.dart';
 import 'screens/stats_screen.dart';
 import 'widgets/app_shell.dart';
@@ -46,6 +47,12 @@ final router = GoRouter(
           path: '/achievements',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: AchievementsScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/replay/:id',
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: ReplayScreen(replayId: state.pathParameters['id']!),
           ),
         ),
       ],

@@ -1195,6 +1195,134 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stats'**
   String get navStats;
+
+  // --- Replay feature ---
+
+  /// No description provided for @replays.
+  ///
+  /// In en, this message translates to:
+  /// **'Replays'**
+  String get replays;
+
+  /// No description provided for @noReplaysYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No replays yet'**
+  String get noReplaysYet;
+
+  /// No description provided for @noReplaysYetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete a game to see replays here.'**
+  String get noReplaysYetSubtitle;
+
+  /// No description provided for @replayViewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay Viewer'**
+  String get replayViewer;
+
+  /// No description provided for @turnN.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn {number}'**
+  String turnN(int number);
+
+  /// No description provided for @turnOfTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn {current} of {total}'**
+  String turnOfTotal(int current, int total);
+
+  /// No description provided for @speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get speed;
+
+  /// No description provided for @exportReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Replay'**
+  String get exportReplay;
+
+  /// No description provided for @importReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Replay'**
+  String get importReplay;
+
+  /// No description provided for @replayCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay JSON copied to clipboard'**
+  String get replayCopied;
+
+  /// No description provided for @replayImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay imported successfully'**
+  String get replayImported;
+
+  /// No description provided for @replayImportError.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid replay data'**
+  String get replayImportError;
+
+  /// No description provided for @deleteReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Replay'**
+  String get deleteReplay;
+
+  /// No description provided for @deleteReplayConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this replay?'**
+  String get deleteReplayConfirm;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @bred.
+  ///
+  /// In en, this message translates to:
+  /// **'Bred'**
+  String get bred;
+
+  /// No description provided for @lost.
+  ///
+  /// In en, this message translates to:
+  /// **'Lost'**
+  String get lostLabel;
+
+  /// No description provided for @traded.
+  ///
+  /// In en, this message translates to:
+  /// **'Traded'**
+  String get traded;
+
+  /// No description provided for @pasteReplayJson.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste replay JSON'**
+  String get pasteReplayJson;
+
+  /// No description provided for @import_.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get import_;
+
+  /// No description provided for @watchReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch Replay'**
+  String get watchReplay;
 }
 
 class _AppLocalizationsDelegate
