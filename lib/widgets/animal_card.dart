@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../models/animal.dart';
 
 class AnimalCard extends StatelessWidget {
@@ -22,23 +23,12 @@ class AnimalCard extends StatelessWidget {
         child: Stack(
           children: [
             Center(
-              child: Container(
-                width: size * 0.6,
-                height: size * 0.6,
-                decoration: BoxDecoration(
-                  color: animal.color.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: animal.color, width: 2),
-                ),
-                child: Center(
-                  child: Text(
-                    animal.label[0],
-                    style: TextStyle(
-                      fontSize: size * 0.3,
-                      fontWeight: FontWeight.bold,
-                      color: animal.color,
-                    ),
-                  ),
+              child: SizedBox(
+                width: size * 0.65,
+                height: size * 0.65,
+                child: SvgPicture.asset(
+                  animal.assetPath,
+                  fit: BoxFit.contain,
                 ),
               ),
             ),

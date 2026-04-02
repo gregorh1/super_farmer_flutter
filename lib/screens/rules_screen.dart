@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../models/animal.dart';
 
 class RulesScreen extends StatelessWidget {
@@ -10,7 +11,7 @@ class RulesScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Rules')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
         children: [
           Card(
             child: Padding(
@@ -61,23 +62,12 @@ class RulesScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Row(
                         children: [
-                          Container(
+                          SizedBox(
                             width: 32,
                             height: 32,
-                            decoration: BoxDecoration(
-                              color: animal.color.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(6),
-                              border:
-                                  Border.all(color: animal.color, width: 1.5),
-                            ),
-                            child: Center(
-                              child: Text(
-                                animal.label[0],
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: animal.color,
-                                ),
-                              ),
+                            child: SvgPicture.asset(
+                              animal.assetPath,
+                              fit: BoxFit.contain,
                             ),
                           ),
                           const SizedBox(width: 12),
