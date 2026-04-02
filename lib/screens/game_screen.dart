@@ -10,6 +10,7 @@ import '../models/game_record.dart';
 import '../providers/game_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/stats_provider.dart';
+import '../services/audio_service.dart';
 import '../utils/constants.dart';
 import '../widgets/dice_center.dart';
 import '../widgets/player_area.dart';
@@ -172,9 +173,39 @@ class _GameScreenState extends ConsumerState<GameScreen>
     ref.listen<GameState>(gameProvider, (prev, next) {
       if (next.winner != null && (prev?.winner == null)) {
         _recordGameResult(next);
+        ref.read(audioServiceProvider).play(GameSound.victory);
+        AudioService.hapticHeavy();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _showWinnerDialog(next.winner!);
         });
+      }
+
+      // Play sounds for game events
+      final event = next.lastEvent;
+      if (event != null && event != prev?.lastEvent) {
+        final audio = ref.read(audioServiceProvider);
+
+        // Attack sounds + haptic
+        if (event.wolfAttack) {
+          audio.play(GameSound.wolfHowl);
+          AudioService.hapticHeavy();
+        } else if (event.foxAttack) {
+          audio.play(GameSound.foxBark);
+          AudioService.hapticHeavy();
+        }
+
+        // Dog protection sound
+        if (event.smallDogSacrificed || event.bigDogSacrificed) {
+          Future.delayed(const Duration(milliseconds: 400), () {
+            audio.play(GameSound.dogBark);
+          });
+        }
+
+        // Breeding sounds — play the highest-value bred animal
+        if (event.bred.isNotEmpty && !event.foxAttack && !event.wolfAttack) {
+          final bredAnimal = event.bred.keys.last;
+          audio.playAnimalSound(bredAnimal);
+        }
       }
 
       // Detect turn change to an AI player and trigger their turn
@@ -333,7 +364,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
               width: double.infinity,
               height: 52,
               child: FilledButton.icon(
-                onPressed: _startGame,
+                onPressed: () {
+                  ref.read(audioServiceProvider).play(GameSound.tap);
+                  _startGame();
+                },
                 icon: const Icon(Icons.play_arrow, size: 28),
                 label: const Text(
                   'Start Game',
@@ -369,10 +403,17 @@ class _GameScreenState extends ConsumerState<GameScreen>
                 gameState: game,
                 onRoll: isAiTurn
                     ? () {} // AI rolls automatically
-                    : () => ref.read(gameProvider.notifier).rollDice(),
+                    : () {
+                        ref.read(audioServiceProvider).play(GameSound.diceRoll);
+                        AudioService.hapticLight();
+                        ref.read(gameProvider.notifier).rollDice();
+                      },
                 onEndTurn: isAiTurn
                     ? () {} // AI ends turn automatically
-                    : () => ref.read(gameProvider.notifier).nextTurn(),
+                    : () {
+                        ref.read(audioServiceProvider).play(GameSound.tap);
+                        ref.read(gameProvider.notifier).nextTurn();
+                      },
                 isAiTurn: isAiTurn,
               ),
             ),
@@ -389,7 +430,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
             gameState: game,
             onTrade: isAiTurn
                 ? (_) {} // AI trades automatically
-                : (rate) => ref.read(gameProvider.notifier).trade(rate),
+                : (rate) {
+                    ref.read(audioServiceProvider).play(GameSound.tap);
+                    ref.read(gameProvider.notifier).trade(rate);
+                  },
             isAiTurn: isAiTurn,
           ),
         ),
