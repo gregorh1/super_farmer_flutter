@@ -5,7 +5,7 @@ import '../models/dice.dart';
 import '../providers/game_provider.dart';
 import 'player_area.dart';
 
-class DiceCenter extends StatelessWidget {
+class DiceCenter extends StatefulWidget {
   const DiceCenter({
     super.key,
     required this.gameState,
@@ -17,15 +17,146 @@ class DiceCenter extends StatelessWidget {
   final VoidCallback onRoll;
   final VoidCallback onEndTurn;
 
-  bool get _canRoll => gameState.lastRoll == null;
-  bool get _canEndTurn => gameState.lastRoll != null;
+  @override
+  State<DiceCenter> createState() => DiceCenterState();
+}
+
+class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
+  late final AnimationController _shakeController;
+  late final AnimationController _revealController;
+  late final Animation<double> _shakeAnimation;
+  late final Animation<double> _revealScale;
+  late final Animation<double> _revealOpacity;
+
+  bool _isRolling = false;
+  DiceRollResult? _displayedRoll;
+
+  // Shuffled faces for the rolling animation
+  static const _greenFaces = [
+    DiceFace.rabbit,
+    DiceFace.lamb,
+    DiceFace.pig,
+    DiceFace.cow,
+    DiceFace.wolf,
+  ];
+  static const _redFaces = [
+    DiceFace.rabbit,
+    DiceFace.lamb,
+    DiceFace.pig,
+    DiceFace.horse,
+    DiceFace.fox,
+  ];
+
+  int _shuffleIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Shake animation: rapid oscillation during roll
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 80),
+    );
+    _shakeAnimation = Tween<double>(begin: -0.08, end: 0.08).animate(
+      CurvedAnimation(parent: _shakeController, curve: Curves.easeInOut),
+    );
+    _shakeController.addStatusListener((status) {
+      if (_isRolling) {
+        if (status == AnimationStatus.completed) {
+          _shakeController.reverse();
+          _advanceShuffle();
+        } else if (status == AnimationStatus.dismissed) {
+          _shakeController.forward();
+          _advanceShuffle();
+        }
+      }
+    });
+
+    // Reveal animation: bounce in after roll completes
+    _revealController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _revealScale = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _revealController, curve: Curves.easeOutBack),
+    );
+    _revealOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _revealController,
+        curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
+      ),
+    );
+
+    _displayedRoll = widget.gameState.lastRoll;
+    if (_displayedRoll != null) {
+      _revealController.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(DiceCenter oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When lastRoll is cleared (new turn), reset display
+    if (widget.gameState.lastRoll == null && _displayedRoll != null) {
+      _displayedRoll = null;
+      _revealController.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _shakeController.dispose();
+    _revealController.dispose();
+    super.dispose();
+  }
+
+  void _advanceShuffle() {
+    if (!_isRolling) return;
+    setState(() {
+      _shuffleIndex++;
+    });
+  }
+
+  Future<void> _handleRoll() async {
+    // Start shaking
+    setState(() {
+      _isRolling = true;
+      _displayedRoll = null;
+      _shuffleIndex = 0;
+    });
+    _revealController.reset();
+    _shakeController.forward();
+
+    // Let the dice shake for a bit
+    await Future.delayed(const Duration(milliseconds: 600));
+
+    // Execute the actual roll
+    widget.onRoll();
+
+    // Stop shaking
+    setState(() {
+      _isRolling = false;
+    });
+    _shakeController.stop();
+    _shakeController.reset();
+
+    // Reveal the result with bounce
+    setState(() {
+      _displayedRoll = widget.gameState.lastRoll;
+    });
+    _revealController.forward();
+  }
+
+  bool get _canRoll => widget.gameState.lastRoll == null && !_isRolling;
+  bool get _canEndTurn => widget.gameState.lastRoll != null && !_isRolling;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final playerColor =
-        PlayerArea.playerColors[gameState.currentPlayerIndex % PlayerArea.playerColors.length];
-    final currentPlayer = gameState.currentPlayer!;
+    final playerColor = PlayerArea
+        .playerColors[widget.gameState.currentPlayerIndex % PlayerArea.playerColors.length];
+    final currentPlayer = widget.gameState.currentPlayer!;
 
     return Card(
       elevation: 3,
@@ -71,15 +202,16 @@ class DiceCenter extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Dice results
-            if (gameState.lastRoll != null) ...[
-              _buildDiceResults(context, gameState.lastRoll!),
-              const SizedBox(height: 12),
-            ],
+            // Dice area: rolling or results
+            if (_isRolling) _buildRollingDice(),
+            if (!_isRolling && _displayedRoll != null)
+              _buildRevealedDice(_displayedRoll!),
+
+            if (_isRolling || _displayedRoll != null) const SizedBox(height: 12),
 
             // Roll button
             FilledButton.icon(
-              onPressed: _canRoll ? onRoll : null,
+              onPressed: _canRoll ? _handleRoll : null,
               icon: const Icon(Icons.casino, size: 20),
               label: const Text('Roll Dice'),
               style: FilledButton.styleFrom(
@@ -93,7 +225,7 @@ class DiceCenter extends StatelessWidget {
 
             // End turn button
             OutlinedButton.icon(
-              onPressed: _canEndTurn ? onEndTurn : null,
+              onPressed: _canEndTurn ? widget.onEndTurn : null,
               icon: const Icon(Icons.skip_next, size: 18),
               label: const Text('End Turn'),
               style: OutlinedButton.styleFrom(
@@ -109,23 +241,65 @@ class DiceCenter extends StatelessWidget {
     );
   }
 
-  Widget _buildDiceResults(BuildContext context, DiceRollResult roll) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _DieResult(
-          face: roll.green,
-          color: const Color(0xFF2E7D32),
-          label: 'Green',
-        ),
-        const SizedBox(width: 12),
-        _DieResult(
-          face: roll.red,
-          color: const Color(0xFFC62828),
-          label: 'Red',
-        ),
-      ],
+  Widget _buildRollingDice() {
+    final greenFace = _greenFaces[_shuffleIndex % _greenFaces.length];
+    final redFace = _redFaces[_shuffleIndex % _redFaces.length];
+
+    return AnimatedBuilder(
+      animation: _shakeAnimation,
+      builder: (context, child) {
+        return Transform.rotate(
+          angle: _shakeAnimation.value,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _DieResult(
+                face: greenFace,
+                color: const Color(0xFF2E7D32),
+                label: 'Green',
+              ),
+              const SizedBox(width: 12),
+              _DieResult(
+                face: redFace,
+                color: const Color(0xFFC62828),
+                label: 'Red',
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRevealedDice(DiceRollResult roll) {
+    return AnimatedBuilder(
+      animation: _revealController,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _revealOpacity.value,
+          child: Transform.scale(
+            scale: _revealScale.value,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _DieResult(
+                  face: roll.green,
+                  color: const Color(0xFF2E7D32),
+                  label: 'Green',
+                ),
+                const SizedBox(width: 12),
+                _DieResult(
+                  face: roll.red,
+                  color: const Color(0xFFC62828),
+                  label: 'Red',
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

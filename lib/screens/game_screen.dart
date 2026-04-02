@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/exchange.dart';
 import '../providers/game_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/dice_center.dart';

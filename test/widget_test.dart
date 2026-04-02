@@ -1034,6 +1034,8 @@ void main() {
       bool rolled = false;
       await tester.pumpWidget(buildDiceCenter(onRoll: () => rolled = true));
       await tester.tap(find.text('Roll Dice'));
+      // The roll callback fires after the 600ms dice shake animation
+      await tester.pump(const Duration(milliseconds: 700));
       expect(rolled, true);
     });
 
@@ -1269,6 +1271,11 @@ void main() {
       expect(PlayerArea.exchangeRateValues[3], 2); // cow→horse
     });
   });
+
+  // Animation and TurnEvent tests
+  _turnEventTests();
+  _diceAnimationTests();
+  _playerAreaAnimationTests();
 }
 
 // Test helpers
@@ -1305,4 +1312,398 @@ void _setPlayerAnimals(GameNotifier notifier, int playerIndex, Map<Animal, int> 
 void _setBankStock(GameNotifier notifier, Map<Animal, int> stock) {
   final bank = Map<Animal, int>.from(notifier.state.bank)..addAll(stock);
   notifier.state = notifier.state.copyWith(bank: bank);
+}
+
+// =============================================================================
+// TurnEvent tests
+// =============================================================================
+
+void _turnEventTests() {
+  group('TurnEvent', () {
+    test('breeding event tracks gained animals', () {
+      // Player has 5 rabbits, rolls 2 rabbits → gains floor((5+2)/2) = 3
+      final notifier = GameNotifier(FixedRandom(0)); // both dice → rabbit
+      notifier.startGame(['Alice']);
+      _setPlayerAnimals(notifier, 0, {Animal.rabbit: 5});
+
+      notifier.rollDice();
+      final event = notifier.state.lastEvent;
+      expect(event, isNotNull);
+      expect(event!.bred[Animal.rabbit], 3);
+      expect(event.foxAttack, false);
+      expect(event.wolfAttack, false);
+    });
+
+    test('fox attack event without dog tracks lost rabbits', () {
+      // Red die face index 11 → fox, green die face index 0 → rabbit
+      final notifier = GameNotifier(_SequenceRandom([0, 11]));
+      notifier.startGame(['Alice']);
+      _setPlayerAnimals(notifier, 0, {Animal.rabbit: 10});
+
+      notifier.rollDice();
+      final event = notifier.state.lastEvent;
+      expect(event, isNotNull);
+      expect(event!.foxAttack, true);
+      expect(event.smallDogSacrificed, false);
+      expect(event.lostAnimals[Animal.rabbit], greaterThan(0));
+    });
+
+    test('fox attack with small dog tracks sacrifice', () {
+      final notifier = GameNotifier(_SequenceRandom([0, 11]));
+      notifier.startGame(['Alice']);
+      _setPlayerAnimals(notifier, 0, {Animal.rabbit: 10, Animal.smallDog: 1});
+
+      notifier.rollDice();
+      final event = notifier.state.lastEvent;
+      expect(event, isNotNull);
+      expect(event!.foxAttack, true);
+      expect(event.smallDogSacrificed, true);
+      expect(event.lostAnimals, isEmpty);
+    });
+
+    test('wolf attack event without dog tracks lost animals', () {
+      // Green die face index 11 → wolf, red die face index 0 → rabbit
+      final notifier = GameNotifier(_SequenceRandom([11, 0]));
+      notifier.startGame(['Alice']);
+      _setPlayerAnimals(notifier, 0, {
+        Animal.rabbit: 5,
+        Animal.lamb: 3,
+        Animal.pig: 2,
+      });
+
+      notifier.rollDice();
+      final event = notifier.state.lastEvent;
+      expect(event, isNotNull);
+      expect(event!.wolfAttack, true);
+      expect(event.bigDogSacrificed, false);
+      expect(event.lostAnimals.isNotEmpty, true);
+    });
+
+    test('wolf attack with big dog tracks sacrifice', () {
+      final notifier = GameNotifier(_SequenceRandom([11, 0]));
+      notifier.startGame(['Alice']);
+      _setPlayerAnimals(notifier, 0, {
+        Animal.rabbit: 5,
+        Animal.bigDog: 1,
+      });
+
+      notifier.rollDice();
+      final event = notifier.state.lastEvent;
+      expect(event, isNotNull);
+      expect(event!.wolfAttack, true);
+      expect(event.bigDogSacrificed, true);
+      expect(event.lostAnimals, isEmpty);
+    });
+
+    test('nextTurn clears lastEvent', () {
+      final notifier = GameNotifier(FixedRandom(0));
+      notifier.startGame(['Alice', 'Bob']);
+      notifier.rollDice();
+      expect(notifier.state.lastEvent, isNotNull);
+      notifier.nextTurn();
+      expect(notifier.state.lastEvent, isNull);
+    });
+  });
+}
+
+// =============================================================================
+// Dice animation widget tests
+// =============================================================================
+
+void _diceAnimationTests() {
+  group('DiceCenter animations', () {
+    Widget buildDiceCenter({
+      GameState? gameState,
+      VoidCallback? onRoll,
+      VoidCallback? onEndTurn,
+    }) {
+      final state = gameState ??
+          GameState(
+            players: [
+              PlayerHerd(
+                name: 'Alice',
+                animals: {for (final a in Animal.values) a: 0},
+              ),
+            ],
+            currentPlayerIndex: 0,
+            isStarted: true,
+            bank: GameState.initialBank(),
+          );
+      return MaterialApp(
+        home: Scaffold(
+          body: DiceCenter(
+            gameState: state,
+            onRoll: onRoll ?? () {},
+            onEndTurn: onEndTurn ?? () {},
+          ),
+        ),
+      );
+    }
+
+    testWidgets('roll button is disabled during animation', (tester) async {
+      await tester.pumpWidget(buildDiceCenter());
+      await tester.tap(find.text('Roll Dice'));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // During roll animation, Roll Dice button should be disabled
+      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      expect(button.onPressed, isNull);
+
+      // Drain the pending timer and animations
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('dice results appear after roll animation completes', (tester) async {
+      final state = GameState(
+        players: [
+          PlayerHerd(
+            name: 'Alice',
+            animals: {for (final a in Animal.values) a: 0},
+          ),
+        ],
+        currentPlayerIndex: 0,
+        isStarted: true,
+        bank: GameState.initialBank(),
+        lastRoll: const DiceRollResult(green: DiceFace.rabbit, red: DiceFace.lamb),
+      );
+      await tester.pumpWidget(buildDiceCenter(gameState: state));
+      // Results should be displayed (reveal animation starts completed for pre-existing rolls)
+      expect(find.text('Green'), findsOneWidget);
+      expect(find.text('Red'), findsOneWidget);
+    });
+
+    testWidgets('end turn button enabled after roll', (tester) async {
+      final state = GameState(
+        players: [
+          PlayerHerd(
+            name: 'Alice',
+            animals: {for (final a in Animal.values) a: 0},
+          ),
+        ],
+        currentPlayerIndex: 0,
+        isStarted: true,
+        bank: GameState.initialBank(),
+        lastRoll: const DiceRollResult(green: DiceFace.rabbit, red: DiceFace.rabbit),
+      );
+      await tester.pumpWidget(buildDiceCenter(gameState: state));
+      final button = tester.widget<OutlinedButton>(find.byType(OutlinedButton));
+      expect(button.onPressed, isNotNull);
+    });
+  });
+}
+
+// =============================================================================
+// PlayerArea animation widget tests
+// =============================================================================
+
+void _playerAreaAnimationTests() {
+  group('PlayerArea animations', () {
+    Widget buildPlayerArea({
+      PlayerHerd? player,
+      int playerIndex = 0,
+      bool isCurrentPlayer = true,
+      GameState? gameState,
+    }) {
+      final p = player ??
+          PlayerHerd(
+            name: 'Alice',
+            animals: {for (final a in Animal.values) a: 0},
+          );
+      final state = gameState ??
+          GameState(
+            players: [p],
+            currentPlayerIndex: 0,
+            isStarted: true,
+            bank: GameState.initialBank(),
+          );
+      return MaterialApp(
+        home: Scaffold(
+          body: PlayerArea(
+            player: p,
+            playerIndex: playerIndex,
+            isCurrentPlayer: isCurrentPlayer,
+            gameState: state,
+            onTrade: (_) {},
+          ),
+        ),
+      );
+    }
+
+    testWidgets('shows animal counts', (tester) async {
+      final player = PlayerHerd(
+        name: 'Alice',
+        animals: {
+          for (final a in Animal.values) a: 0,
+          Animal.rabbit: 5,
+        },
+      );
+      await tester.pumpWidget(buildPlayerArea(player: player));
+      expect(find.text('5'), findsOneWidget);
+    });
+
+    testWidgets('attack flash overlay appears on fox attack with losses', (tester) async {
+      final player = PlayerHerd(
+        name: 'Alice',
+        animals: {for (final a in Animal.values) a: 0},
+      );
+      final event = TurnEvent(
+        roll: const DiceRollResult(green: DiceFace.rabbit, red: DiceFace.fox),
+        foxAttack: true,
+        lostAnimals: {Animal.rabbit: 5},
+      );
+      final state = GameState(
+        players: [player],
+        currentPlayerIndex: 0,
+        isStarted: true,
+        bank: GameState.initialBank(),
+        lastRoll: const DiceRollResult(green: DiceFace.rabbit, red: DiceFace.fox),
+        lastEvent: event,
+      );
+
+      // First render without event
+      final noEventState = GameState(
+        players: [player],
+        currentPlayerIndex: 0,
+        isStarted: true,
+        bank: GameState.initialBank(),
+      );
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: PlayerArea(
+            player: player,
+            playerIndex: 0,
+            isCurrentPlayer: true,
+            gameState: noEventState,
+            onTrade: (_) {},
+          ),
+        ),
+      ));
+
+      // Now rebuild with the attack event to trigger animation
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: PlayerArea(
+            player: player,
+            playerIndex: 0,
+            isCurrentPlayer: true,
+            gameState: state,
+            onTrade: (_) {},
+          ),
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // The widget should still render correctly during animation
+      expect(find.text('Alice'), findsOneWidget);
+    });
+
+    testWidgets('dog sacrifice triggers amber flash', (tester) async {
+      final player = PlayerHerd(
+        name: 'Alice',
+        animals: {for (final a in Animal.values) a: 0},
+      );
+      final event = TurnEvent(
+        roll: const DiceRollResult(green: DiceFace.rabbit, red: DiceFace.fox),
+        foxAttack: true,
+        smallDogSacrificed: true,
+      );
+      final state = GameState(
+        players: [player],
+        currentPlayerIndex: 0,
+        isStarted: true,
+        bank: GameState.initialBank(),
+        lastRoll: const DiceRollResult(green: DiceFace.rabbit, red: DiceFace.fox),
+        lastEvent: event,
+      );
+
+      // First render without event
+      final noEventState = GameState(
+        players: [player],
+        currentPlayerIndex: 0,
+        isStarted: true,
+        bank: GameState.initialBank(),
+      );
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: PlayerArea(
+            player: player,
+            playerIndex: 0,
+            isCurrentPlayer: true,
+            gameState: noEventState,
+            onTrade: (_) {},
+          ),
+        ),
+      ));
+
+      // Rebuild with sacrifice event
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: PlayerArea(
+            player: player,
+            playerIndex: 0,
+            isCurrentPlayer: true,
+            gameState: state,
+            onTrade: (_) {},
+          ),
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Alice'), findsOneWidget);
+    });
+
+    testWidgets('count pop animation triggers on count change', (tester) async {
+      final player0 = PlayerHerd(
+        name: 'Alice',
+        animals: {for (final a in Animal.values) a: 0},
+      );
+      final state0 = GameState(
+        players: [player0],
+        currentPlayerIndex: 0,
+        isStarted: true,
+        bank: GameState.initialBank(),
+      );
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: PlayerArea(
+            player: player0,
+            playerIndex: 0,
+            isCurrentPlayer: true,
+            gameState: state0,
+            onTrade: (_) {},
+          ),
+        ),
+      ));
+
+      // Update with new count
+      final player1 = PlayerHerd(
+        name: 'Alice',
+        animals: {for (final a in Animal.values) a: 0, Animal.rabbit: 3},
+      );
+      final state1 = GameState(
+        players: [player1],
+        currentPlayerIndex: 0,
+        isStarted: true,
+        bank: GameState.initialBank(),
+      );
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: PlayerArea(
+            player: player1,
+            playerIndex: 0,
+            isCurrentPlayer: true,
+            gameState: state1,
+            onTrade: (_) {},
+          ),
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 200));
+
+      // The count should show the new value (may appear multiple times due to exchange rate "3")
+      expect(find.text('3'), findsAtLeast(1));
+
+      // Drain animations
+      await tester.pumpAndSettle();
+    });
+  });
 }

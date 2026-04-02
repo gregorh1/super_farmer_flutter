@@ -5,6 +5,27 @@ import '../models/animal.dart';
 import '../models/dice.dart';
 import '../models/exchange.dart';
 
+/// Describes what happened during a dice roll so the UI can animate accordingly.
+class TurnEvent {
+  const TurnEvent({
+    required this.roll,
+    this.bred = const {},
+    this.foxAttack = false,
+    this.wolfAttack = false,
+    this.smallDogSacrificed = false,
+    this.bigDogSacrificed = false,
+    this.lostAnimals = const {},
+  });
+
+  final DiceRollResult roll;
+  final Map<Animal, int> bred; // animals gained from breeding
+  final bool foxAttack;
+  final bool wolfAttack;
+  final bool smallDogSacrificed;
+  final bool bigDogSacrificed;
+  final Map<Animal, int> lostAnimals; // animals lost to attacks
+}
+
 class PlayerHerd {
   const PlayerHerd({
     this.animals = const {},
@@ -35,6 +56,7 @@ class GameState {
     this.isStarted = false,
     this.bank = const {},
     this.lastRoll,
+    this.lastEvent,
     this.winner,
   });
 
@@ -43,6 +65,7 @@ class GameState {
   final bool isStarted;
   final Map<Animal, int> bank;
   final DiceRollResult? lastRoll;
+  final TurnEvent? lastEvent;
   final String? winner;
 
   PlayerHerd? get currentPlayer =>
@@ -55,6 +78,8 @@ class GameState {
     Map<Animal, int>? bank,
     DiceRollResult? lastRoll,
     bool clearLastRoll = false,
+    TurnEvent? lastEvent,
+    bool clearLastEvent = false,
     String? winner,
     bool clearWinner = false,
   }) {
@@ -64,6 +89,7 @@ class GameState {
       isStarted: isStarted ?? this.isStarted,
       bank: bank ?? this.bank,
       lastRoll: clearLastRoll ? null : (lastRoll ?? this.lastRoll),
+      lastEvent: clearLastEvent ? null : (lastEvent ?? this.lastEvent),
       winner: clearWinner ? null : (winner ?? this.winner),
     );
   }
@@ -108,6 +134,7 @@ class GameNotifier extends StateNotifier<GameState> {
       currentPlayerIndex:
           (state.currentPlayerIndex + 1) % state.players.length,
       clearLastRoll: true,
+      clearLastEvent: true,
     );
   }
 
@@ -121,18 +148,25 @@ class GameNotifier extends StateNotifier<GameState> {
     var playerAnimals = Map<Animal, int>.from(state.players[playerIndex].animals);
     var bank = Map<Animal, int>.from(state.bank);
 
+    // Track event details for animations
+    final bred = <Animal, int>{};
+    final lostAnimals = <Animal, int>{};
+    var smallDogSacrificed = false;
+    var bigDogSacrificed = false;
+
     // Apply breeding: for each animal on the dice, gain floor((owned + rolled) / 2)
     for (final entry in roll.rolledAnimals.entries) {
       final animal = entry.key;
       final rolledCount = entry.value;
       final owned = playerAnimals[animal] ?? 0;
-      final bred = (owned + rolledCount) ~/ 2;
-      if (bred > 0) {
+      final bredCount = (owned + rolledCount) ~/ 2;
+      if (bredCount > 0) {
         // Limited by bank stock
         final available = bank[animal] ?? 0;
-        final gained = bred < available ? bred : available;
+        final gained = bredCount < available ? bredCount : available;
         playerAnimals[animal] = owned + gained;
         bank[animal] = available - gained;
+        if (gained > 0) bred[animal] = gained;
       }
     }
 
@@ -142,9 +176,11 @@ class GameNotifier extends StateNotifier<GameState> {
         // Small dog is sacrificed back to bank
         playerAnimals[Animal.smallDog] = (playerAnimals[Animal.smallDog] ?? 0) - 1;
         bank[Animal.smallDog] = (bank[Animal.smallDog] ?? 0) + 1;
+        smallDogSacrificed = true;
       } else {
         // Lose all rabbits back to bank
         final rabbits = playerAnimals[Animal.rabbit] ?? 0;
+        if (rabbits > 0) lostAnimals[Animal.rabbit] = rabbits;
         bank[Animal.rabbit] = (bank[Animal.rabbit] ?? 0) + rabbits;
         playerAnimals[Animal.rabbit] = 0;
       }
@@ -156,16 +192,29 @@ class GameNotifier extends StateNotifier<GameState> {
         // Big dog is sacrificed back to bank
         playerAnimals[Animal.bigDog] = (playerAnimals[Animal.bigDog] ?? 0) - 1;
         bank[Animal.bigDog] = (bank[Animal.bigDog] ?? 0) + 1;
+        bigDogSacrificed = true;
       } else {
         // Lose all animals except horse and small dog
         for (final animal in Animal.values) {
           if (animal == Animal.horse || animal == Animal.smallDog) continue;
           final count = playerAnimals[animal] ?? 0;
+          if (count > 0) lostAnimals[animal] = count;
           bank[animal] = (bank[animal] ?? 0) + count;
           playerAnimals[animal] = 0;
         }
       }
     }
+
+    // Build turn event
+    final event = TurnEvent(
+      roll: roll,
+      bred: bred,
+      foxAttack: roll.hasFox,
+      wolfAttack: roll.hasWolf,
+      smallDogSacrificed: smallDogSacrificed,
+      bigDogSacrificed: bigDogSacrificed,
+      lostAnimals: lostAnimals,
+    );
 
     // Update state
     final updatedPlayers = List<PlayerHerd>.from(state.players);
@@ -183,6 +232,7 @@ class GameNotifier extends StateNotifier<GameState> {
     state = state.copyWith(
       players: updatedPlayers,
       bank: bank,
+      lastEvent: event,
       winner: winner,
     );
 
