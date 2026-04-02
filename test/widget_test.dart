@@ -20,6 +20,10 @@ import 'package:super_farmer/widgets/player_setup_card.dart';
 import 'package:super_farmer/widgets/settings_sheet.dart';
 import 'package:super_farmer/widgets/tutorial_carousel.dart';
 import 'package:super_farmer/screens/rules_screen.dart';
+import 'package:super_farmer/models/game_record.dart';
+import 'package:super_farmer/providers/stats_provider.dart';
+import 'package:super_farmer/screens/stats_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// A fixed Random that always returns a specific sequence index.
 class FixedRandom implements Random {
@@ -64,6 +68,7 @@ void main() {
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Game'), findsOneWidget);
       expect(find.text('Rules'), findsOneWidget);
+      expect(find.text('Stats'), findsOneWidget);
     });
 
     testWidgets('shows bottom navigation after splash', (tester) async {
@@ -74,6 +79,7 @@ void main() {
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Game'), findsOneWidget);
       expect(find.text('Rules'), findsOneWidget);
+      expect(find.text('Stats'), findsOneWidget);
     });
 
     testWidgets('navigates to game screen', (tester) async {
@@ -2819,6 +2825,573 @@ void _playerAreaAnimationTests() {
       // Should show "Thinking" text
       expect(find.text('Thinking'), findsOneWidget);
       expect(find.byIcon(Icons.smart_toy), findsAtLeast(1));
+    });
+  });
+
+  // ===========================================================================
+  // GameRecord model tests
+  // ===========================================================================
+  group('GameRecord', () {
+    test('serializes to and from JSON', () {
+      final record = GameRecord(
+        date: DateTime(2026, 4, 1, 12, 0),
+        playerNames: ['Alice', 'Bob'],
+        winnerName: 'Alice',
+        playerCount: 2,
+        totalTurns: 42,
+        lastAnimalAcquired: 'horse',
+        winnerIsAi: false,
+      );
+
+      final json = record.toJson();
+      final decoded = GameRecord.fromJson(json);
+
+      expect(decoded.date, record.date);
+      expect(decoded.playerNames, ['Alice', 'Bob']);
+      expect(decoded.winnerName, 'Alice');
+      expect(decoded.playerCount, 2);
+      expect(decoded.totalTurns, 42);
+      expect(decoded.lastAnimalAcquired, 'horse');
+      expect(decoded.winnerIsAi, false);
+    });
+
+    test('encode/decode list of records', () {
+      final records = [
+        GameRecord(
+          date: DateTime(2026, 4, 1),
+          playerNames: ['Alice', 'Bob'],
+          winnerName: 'Alice',
+          playerCount: 2,
+          totalTurns: 30,
+          lastAnimalAcquired: 'horse',
+          winnerIsAi: false,
+        ),
+        GameRecord(
+          date: DateTime(2026, 4, 2),
+          playerNames: ['Alice', 'Bob', 'Carol'],
+          winnerName: 'Bob',
+          playerCount: 3,
+          totalTurns: 50,
+          lastAnimalAcquired: 'cow',
+          winnerIsAi: false,
+        ),
+      ];
+
+      final encoded = GameRecord.encode(records);
+      final decoded = GameRecord.decode(encoded);
+
+      expect(decoded.length, 2);
+      expect(decoded[0].winnerName, 'Alice');
+      expect(decoded[1].winnerName, 'Bob');
+      expect(decoded[1].playerCount, 3);
+    });
+
+    test('fromJson handles missing winnerIsAi field', () {
+      final json = {
+        'date': '2026-04-01T00:00:00.000',
+        'playerNames': ['Alice'],
+        'winnerName': 'Alice',
+        'playerCount': 2,
+        'totalTurns': 10,
+        'lastAnimalAcquired': 'horse',
+      };
+
+      final record = GameRecord.fromJson(json);
+      expect(record.winnerIsAi, false);
+    });
+  });
+
+  // ===========================================================================
+  // GameStats computation tests
+  // ===========================================================================
+  group('GameStats', () {
+    test('returns empty stats for no records', () {
+      final stats = GameStats.fromRecords([]);
+      expect(stats.gamesPlayed, 0);
+      expect(stats.gamesWon, 0);
+      expect(stats.gamesLost, 0);
+      expect(stats.winRateByPlayerCount, isEmpty);
+      expect(stats.averageTurns, 0);
+      expect(stats.fastestWin, isNull);
+      expect(stats.mostCommonLastAnimal, isNull);
+      expect(stats.leaderboard, isEmpty);
+    });
+
+    test('computes basic stats from records', () {
+      final records = [
+        GameRecord(
+          date: DateTime(2026, 4, 1),
+          playerNames: ['Alice', 'Bob'],
+          winnerName: 'Alice',
+          playerCount: 2,
+          totalTurns: 30,
+          lastAnimalAcquired: 'horse',
+          winnerIsAi: false,
+        ),
+        GameRecord(
+          date: DateTime(2026, 4, 2),
+          playerNames: ['Alice', 'Bot'],
+          winnerName: 'Bot',
+          playerCount: 2,
+          totalTurns: 20,
+          lastAnimalAcquired: 'horse',
+          winnerIsAi: true,
+        ),
+      ];
+
+      final stats = GameStats.fromRecords(records);
+      expect(stats.gamesPlayed, 2);
+      expect(stats.gamesWon, 1); // Only human wins
+      expect(stats.gamesLost, 1); // AI win counts as loss
+      expect(stats.averageTurns, 25.0);
+      expect(stats.fastestWin, 20);
+      expect(stats.mostCommonLastAnimal, 'Horse');
+    });
+
+    test('computes win rate by player count', () {
+      final records = [
+        GameRecord(
+          date: DateTime(2026, 4, 1),
+          playerNames: ['A', 'B'],
+          winnerName: 'A',
+          playerCount: 2,
+          totalTurns: 10,
+          lastAnimalAcquired: 'horse',
+          winnerIsAi: false,
+        ),
+        GameRecord(
+          date: DateTime(2026, 4, 2),
+          playerNames: ['A', 'B'],
+          winnerName: 'B',
+          playerCount: 2,
+          totalTurns: 20,
+          lastAnimalAcquired: 'cow',
+          winnerIsAi: true,
+        ),
+        GameRecord(
+          date: DateTime(2026, 4, 3),
+          playerNames: ['A', 'B', 'C'],
+          winnerName: 'A',
+          playerCount: 3,
+          totalTurns: 30,
+          lastAnimalAcquired: 'horse',
+          winnerIsAi: false,
+        ),
+      ];
+
+      final stats = GameStats.fromRecords(records);
+      expect(stats.winRateByPlayerCount[2], 0.5); // 1 human win / 2 games
+      expect(stats.winRateByPlayerCount[3], 1.0); // 1 human win / 1 game
+      expect(stats.winRateByPlayerCount.containsKey(4), false);
+    });
+
+    test('computes leaderboard sorted by wins', () {
+      final records = [
+        GameRecord(
+          date: DateTime(2026, 4, 1),
+          playerNames: ['Alice', 'Bob'],
+          winnerName: 'Alice',
+          playerCount: 2,
+          totalTurns: 10,
+          lastAnimalAcquired: 'horse',
+          winnerIsAi: false,
+        ),
+        GameRecord(
+          date: DateTime(2026, 4, 2),
+          playerNames: ['Alice', 'Bob'],
+          winnerName: 'Alice',
+          playerCount: 2,
+          totalTurns: 20,
+          lastAnimalAcquired: 'horse',
+          winnerIsAi: false,
+        ),
+        GameRecord(
+          date: DateTime(2026, 4, 3),
+          playerNames: ['Alice', 'Bob'],
+          winnerName: 'Bob',
+          playerCount: 2,
+          totalTurns: 15,
+          lastAnimalAcquired: 'horse',
+          winnerIsAi: false,
+        ),
+      ];
+
+      final stats = GameStats.fromRecords(records);
+      expect(stats.leaderboard.length, 2);
+      expect(stats.leaderboard[0].name, 'Alice');
+      expect(stats.leaderboard[0].wins, 2);
+      expect(stats.leaderboard[0].gamesPlayed, 3);
+      expect(stats.leaderboard[1].name, 'Bob');
+      expect(stats.leaderboard[1].wins, 1);
+      expect(stats.leaderboard[1].gamesPlayed, 3);
+    });
+
+    test('most common last animal resolves to label', () {
+      final records = [
+        GameRecord(
+          date: DateTime(2026, 4, 1),
+          playerNames: ['A', 'B'],
+          winnerName: 'A',
+          playerCount: 2,
+          totalTurns: 10,
+          lastAnimalAcquired: 'cow',
+          winnerIsAi: false,
+        ),
+        GameRecord(
+          date: DateTime(2026, 4, 2),
+          playerNames: ['A', 'B'],
+          winnerName: 'B',
+          playerCount: 2,
+          totalTurns: 20,
+          lastAnimalAcquired: 'cow',
+          winnerIsAi: false,
+        ),
+        GameRecord(
+          date: DateTime(2026, 4, 3),
+          playerNames: ['A', 'B'],
+          winnerName: 'A',
+          playerCount: 2,
+          totalTurns: 15,
+          lastAnimalAcquired: 'horse',
+          winnerIsAi: false,
+        ),
+      ];
+
+      final stats = GameStats.fromRecords(records);
+      expect(stats.mostCommonLastAnimal, 'Cow');
+    });
+  });
+
+  // ===========================================================================
+  // Turn number tracking tests
+  // ===========================================================================
+  group('Turn tracking', () {
+    test('turn number starts at 0', () {
+      final notifier = GameNotifier(FixedRandom(0));
+      notifier.startGame(['Alice', 'Bob']);
+      expect(notifier.state.turnNumber, 0);
+    });
+
+    test('turn number increments on nextTurn', () {
+      final notifier = GameNotifier(FixedRandom(0));
+      notifier.startGame(['Alice', 'Bob']);
+
+      notifier.rollDice();
+      notifier.nextTurn();
+      expect(notifier.state.turnNumber, 1);
+
+      notifier.rollDice();
+      notifier.nextTurn();
+      expect(notifier.state.turnNumber, 2);
+    });
+
+    test('turn number resets on new game', () {
+      final notifier = GameNotifier(FixedRandom(0));
+      notifier.startGame(['Alice', 'Bob']);
+      notifier.rollDice();
+      notifier.nextTurn();
+      expect(notifier.state.turnNumber, 1);
+
+      notifier.resetGame();
+      notifier.startGame(['Alice', 'Bob']);
+      expect(notifier.state.turnNumber, 0);
+    });
+  });
+
+  // ===========================================================================
+  // Last animal acquired tracking tests
+  // ===========================================================================
+  group('Last animal acquired', () {
+    test('findLastAnimalAcquired detects newly acquired animal', () {
+      final before = {
+        Animal.rabbit: 3,
+        Animal.lamb: 1,
+        Animal.pig: 1,
+        Animal.cow: 1,
+        Animal.horse: 0,
+      };
+      final after = {
+        Animal.rabbit: 3,
+        Animal.lamb: 1,
+        Animal.pig: 1,
+        Animal.cow: 1,
+        Animal.horse: 1,
+      };
+
+      final result = GameNotifier.findLastAnimalAcquired(before, after);
+      expect(result, Animal.horse);
+    });
+
+    test('findLastAnimalAcquired returns null if no new animal type', () {
+      final before = {
+        Animal.rabbit: 3,
+        Animal.lamb: 1,
+        Animal.pig: 0,
+        Animal.cow: 0,
+        Animal.horse: 0,
+      };
+      final after = {
+        Animal.rabbit: 5,
+        Animal.lamb: 1,
+        Animal.pig: 0,
+        Animal.cow: 0,
+        Animal.horse: 0,
+      };
+
+      final result = GameNotifier.findLastAnimalAcquired(before, after);
+      expect(result, isNull);
+    });
+
+    test('findLastAnimalAcquired ignores dogs', () {
+      final before = <Animal, int>{
+        Animal.smallDog: 0,
+        Animal.bigDog: 0,
+      };
+      final after = <Animal, int>{
+        Animal.smallDog: 1,
+        Animal.bigDog: 1,
+      };
+
+      final result = GameNotifier.findLastAnimalAcquired(before, after);
+      expect(result, isNull);
+    });
+
+    test('lastAnimalAcquired is set on win via breeding', () {
+      // Use FixedRandom(0) which gives rabbit on both dice
+      final notifier = GameNotifier(FixedRandom(0));
+      notifier.startGame(['Alice']);
+
+      // Give Alice all animals except rabbit
+      _setPlayerAnimals(notifier, 0, {
+        Animal.rabbit: 0,
+        Animal.lamb: 1,
+        Animal.pig: 1,
+        Animal.cow: 1,
+        Animal.horse: 1,
+      });
+
+      // Rolling rabbits should give her a rabbit via breeding
+      // FixedRandom(0) → green die index 0 = rabbit, red die index 0 = rabbit
+      // With 0 rabbits + 2 rolled = floor(2/2) = 1 bred
+      notifier.rollDice();
+
+      expect(notifier.state.winner, 'Alice');
+      expect(notifier.state.lastAnimalAcquired, Animal.rabbit);
+    });
+
+    test('lastAnimalAcquired is set on win via trade', () {
+      final notifier = GameNotifier(FixedRandom(0));
+      notifier.startGame(['Alice']);
+
+      // Give Alice all animals except horse, plus enough cows to trade
+      _setPlayerAnimals(notifier, 0, {
+        Animal.rabbit: 1,
+        Animal.lamb: 1,
+        Animal.pig: 1,
+        Animal.cow: 3,
+        Animal.horse: 0,
+      });
+
+      // Trade 2 cows for 1 horse
+      notifier.trade(const ExchangeRate(
+        from: Animal.cow,
+        fromCount: 2,
+        to: Animal.horse,
+        toCount: 1,
+      ));
+
+      expect(notifier.state.winner, 'Alice');
+      expect(notifier.state.lastAnimalAcquired, Animal.horse);
+    });
+  });
+
+  // ===========================================================================
+  // StatsScreen widget tests
+  // ===========================================================================
+  group('StatsScreen', () {
+    testWidgets('shows empty state when no records', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(home: const StatsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('No games played yet'), findsOneWidget);
+      expect(find.text('Statistics'), findsOneWidget);
+    });
+
+    testWidgets('shows tabs when records exist', (tester) async {
+      final records = [
+        GameRecord(
+          date: DateTime(2026, 4, 1),
+          playerNames: ['Alice', 'Bob'],
+          winnerName: 'Alice',
+          playerCount: 2,
+          totalTurns: 30,
+          lastAnimalAcquired: 'horse',
+          winnerIsAi: false,
+        ),
+      ];
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            statsProvider.overrideWith((ref) {
+              final notifier = StatsNotifier();
+              // Directly set state for testing
+              notifier.state = records;
+              return notifier;
+            }),
+          ],
+          child: MaterialApp(home: const StatsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Overview'), findsOneWidget);
+      expect(find.text('History'), findsOneWidget);
+      expect(find.text('Leaderboard'), findsOneWidget);
+    });
+
+    testWidgets('overview tab shows game summary stats', (tester) async {
+      final records = [
+        GameRecord(
+          date: DateTime(2026, 4, 1),
+          playerNames: ['Alice', 'Bob'],
+          winnerName: 'Alice',
+          playerCount: 2,
+          totalTurns: 30,
+          lastAnimalAcquired: 'horse',
+          winnerIsAi: false,
+        ),
+        GameRecord(
+          date: DateTime(2026, 4, 2),
+          playerNames: ['Alice', 'Bot'],
+          winnerName: 'Bot',
+          playerCount: 2,
+          totalTurns: 20,
+          lastAnimalAcquired: 'horse',
+          winnerIsAi: true,
+        ),
+      ];
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            statsProvider.overrideWith((ref) {
+              final notifier = StatsNotifier();
+              notifier.state = records;
+              return notifier;
+            }),
+          ],
+          child: MaterialApp(home: const StatsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Should show summary cards
+      expect(find.text('Played'), findsOneWidget);
+      expect(find.text('2'), findsAtLeast(1)); // 2 games played
+      expect(find.text('Won'), findsOneWidget);
+      expect(find.text('Lost'), findsOneWidget);
+    });
+
+    testWidgets('history tab shows game records', (tester) async {
+      final records = [
+        GameRecord(
+          date: DateTime(2026, 4, 1),
+          playerNames: ['Alice', 'Bob'],
+          winnerName: 'Alice',
+          playerCount: 2,
+          totalTurns: 30,
+          lastAnimalAcquired: 'horse',
+          winnerIsAi: false,
+        ),
+      ];
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            statsProvider.overrideWith((ref) {
+              final notifier = StatsNotifier();
+              notifier.state = records;
+              return notifier;
+            }),
+          ],
+          child: MaterialApp(home: const StatsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Switch to history tab
+      await tester.tap(find.text('History'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Alice'), findsAtLeast(1));
+      expect(find.textContaining('30 turns'), findsOneWidget);
+    });
+
+    testWidgets('navigates to stats screen via bottom nav', (tester) async {
+      await tester.pumpWidget(const ProviderScope(child: SuperFarmerApp()));
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Stats'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Statistics'), findsOneWidget);
+      expect(find.text('No games played yet'), findsOneWidget);
+    });
+  });
+
+  // ===========================================================================
+  // StatsNotifier tests
+  // ===========================================================================
+  group('StatsNotifier', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    test('starts with empty state', () {
+      final notifier = StatsNotifier();
+      expect(notifier.state, isEmpty);
+    });
+
+    test('addRecord adds to state', () async {
+      final notifier = StatsNotifier();
+      final record = GameRecord(
+        date: DateTime(2026, 4, 1),
+        playerNames: ['Alice', 'Bob'],
+        winnerName: 'Alice',
+        playerCount: 2,
+        totalTurns: 30,
+        lastAnimalAcquired: 'horse',
+        winnerIsAi: false,
+      );
+
+      await notifier.addRecord(record);
+      expect(notifier.state.length, 1);
+      expect(notifier.state[0].winnerName, 'Alice');
+    });
+
+    test('clearAll removes all records', () async {
+      final notifier = StatsNotifier();
+      final record = GameRecord(
+        date: DateTime(2026, 4, 1),
+        playerNames: ['Alice', 'Bob'],
+        winnerName: 'Alice',
+        playerCount: 2,
+        totalTurns: 30,
+        lastAnimalAcquired: 'horse',
+        winnerIsAi: false,
+      );
+
+      await notifier.addRecord(record);
+      expect(notifier.state.length, 1);
+
+      await notifier.clearAll();
+      expect(notifier.state, isEmpty);
     });
   });
 }

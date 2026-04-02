@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'screens/home_screen.dart';
 import 'screens/game_screen.dart';
 import 'screens/rules_screen.dart';
+import 'screens/stats_screen.dart';
 import 'widgets/app_shell.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -32,6 +33,12 @@ final router = GoRouter(
           path: '/rules',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: RulesScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/stats',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: StatsScreen(),
           ),
         ),
       ],
