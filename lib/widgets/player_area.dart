@@ -365,7 +365,8 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
           animal.label,
           style: theme.textTheme.labelSmall?.copyWith(
             fontSize: 9,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+            color: theme.colorScheme.onSurface
+                .withValues(alpha: theme.brightness == Brightness.dark ? 0.9 : 0.8),
           ),
         ),
       ],
@@ -543,6 +544,8 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
               textStyle:
                   const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
               foregroundColor: color,
+              disabledForegroundColor: theme.colorScheme.onSurface
+                  .withValues(alpha: theme.brightness == Brightness.dark ? 0.8 : 0.38),
             ),
             child: Text(label),
           ),

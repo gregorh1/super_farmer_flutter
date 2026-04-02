@@ -222,7 +222,9 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
                 child: Text(
                   'Tap to roll the dice!',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                    color: theme.brightness == Brightness.dark
+                        ? const Color(0xFFE0E0E0)
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.75),
                   ),
                 ),
               ),
@@ -267,8 +269,8 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  disabledForegroundColor:
-                      theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  disabledForegroundColor: theme.colorScheme.onSurface
+                      .withValues(alpha: theme.brightness == Brightness.dark ? 0.6 : 0.5),
                 ),
               ),
             ),
