@@ -289,7 +289,13 @@ class _SettingsTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          trailing,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: trailing,
+            ),
+          ),
         ],
       ),
     );
