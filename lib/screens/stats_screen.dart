@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/achievement.dart';
 import '../models/game_record.dart';
+import '../providers/achievement_provider.dart';
 import '../providers/stats_provider.dart';
 
 class StatsScreen extends ConsumerWidget {
@@ -11,8 +13,10 @@ class StatsScreen extends ConsumerWidget {
     final records = ref.watch(statsProvider);
     final stats = ref.watch(gameStatsProvider);
 
+    final achievementStates = ref.watch(achievementProvider);
+
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Statistics'),
@@ -26,20 +30,31 @@ class StatsScreen extends ConsumerWidget {
               ),
           ],
           bottom: const TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.center,
             tabs: [
               Tab(text: 'Overview'),
               Tab(text: 'History'),
               Tab(text: 'Leaderboard'),
+              Tab(text: 'Achievements'),
             ],
           ),
         ),
         body: records.isEmpty
-            ? const _EmptyState()
+            ? TabBarView(
+                children: [
+                  const _EmptyState(),
+                  const _EmptyState(),
+                  const _EmptyState(),
+                  _AchievementsTab(states: achievementStates),
+                ],
+              )
             : TabBarView(
                 children: [
                   _OverviewTab(stats: stats),
                   _HistoryTab(records: records),
                   _LeaderboardTab(stats: stats),
+                  _AchievementsTab(states: achievementStates),
                 ],
               ),
       ),
@@ -505,6 +520,191 @@ class _LabeledStat extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AchievementsTab extends StatelessWidget {
+  const _AchievementsTab({required this.states});
+  final List<AchievementState> states;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final unlockedCount = states.where((s) => s.unlocked).length;
+    final totalCount = AchievementDefinition.all.length;
+    final progress = totalCount > 0 ? unlockedCount / totalCount : 0.0;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Progress summary
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Achievements',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      '$unlockedCount / $totalCount',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 10,
+                    backgroundColor:
+                        theme.colorScheme.primary.withValues(alpha: 0.2),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '$unlockedCount of $totalCount unlocked',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Achievement list
+        for (final def in AchievementDefinition.all) ...[
+          _AchievementListTile(
+            definition: def,
+            state: states.firstWhere((s) => s.id == def.id),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _AchievementListTile extends StatelessWidget {
+  const _AchievementListTile({
+    required this.definition,
+    required this.state,
+  });
+
+  final AchievementDefinition definition;
+  final AchievementState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final unlocked = state.unlocked;
+    final hasProgress = definition.targetProgress != null;
+
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      color: unlocked ? null : theme.colorScheme.surfaceContainerHighest,
+      child: ListTile(
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: unlocked
+                ? Colors.amber.shade100
+                : theme.colorScheme.outline.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            definition.icon,
+            color: unlocked
+                ? Colors.amber.shade700
+                : isDark
+                    ? const Color(0xFF9E9E9E)
+                    : theme.colorScheme.outline.withValues(alpha: 0.4),
+            size: 20,
+          ),
+        ),
+        title: Text(
+          definition.name,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: unlocked
+                ? null
+                : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              definition.description,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: unlocked
+                    ? theme.colorScheme.onSurface.withValues(alpha: 0.8)
+                    : isDark
+                        ? const Color(0xFFB0B0B0)
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            if (hasProgress && !unlocked) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: LinearProgressIndicator(
+                        value: state.progress / definition.targetProgress!,
+                        minHeight: 4,
+                        backgroundColor: isDark
+                            ? Colors.white.withValues(alpha: 0.15)
+                            : theme.colorScheme.outline
+                                .withValues(alpha: 0.15),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          theme.colorScheme.primary.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${state.progress}/${definition.targetProgress}',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurface
+                          .withValues(alpha: 0.6),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+        trailing: unlocked && state.unlockedAt != null
+            ? Text(
+                '${state.unlockedAt!.day}/${state.unlockedAt!.month}/${state.unlockedAt!.year}',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color:
+                      theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                ),
+              )
+            : null,
+      ),
     );
   }
 }

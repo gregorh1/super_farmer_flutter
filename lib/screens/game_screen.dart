@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../models/achievement.dart';
 import '../models/ai_difficulty.dart';
 import '../models/animal.dart';
+import '../models/dice.dart';
 import '../models/exchange.dart';
 import '../models/game_record.dart';
+import '../providers/achievement_provider.dart';
 import '../providers/game_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/stats_provider.dart';
@@ -171,6 +174,11 @@ class _GameScreenState extends ConsumerState<GameScreen>
     final game = ref.watch(gameProvider);
 
     ref.listen<GameState>(gameProvider, (prev, next) {
+      // Check achievements on every state change
+      if (prev != null) {
+        _checkAchievements(prev, next);
+      }
+
       if (next.winner != null && (prev?.winner == null)) {
         _recordGameResult(next);
         ref.read(audioServiceProvider).play(GameSound.victory);
@@ -467,6 +475,150 @@ class _GameScreenState extends ConsumerState<GameScreen>
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  /// Checks and unlocks achievements based on the current game state.
+  void _checkAchievements(GameState prev, GameState next) {
+    final achievements = ref.read(achievementProvider.notifier);
+    final newlyUnlocked = <AchievementDefinition>[];
+
+    void _tryUnlock(AchievementId id) {
+      if (achievements.unlock(id)) {
+        newlyUnlocked.add(AchievementDefinition.getById(id));
+      }
+    }
+
+    void _tryIncrement(AchievementId id, {int amount = 1}) {
+      if (achievements.incrementProgress(id, amount: amount)) {
+        newlyUnlocked.add(AchievementDefinition.getById(id));
+      }
+    }
+
+    // Only check achievements for human players
+    final currentPlayer = next.currentPlayer;
+    if (currentPlayer == null || currentPlayer.isAi) {
+      // Still check for lucky roller even during AI turns for observation
+    }
+
+    final event = next.lastEvent;
+
+    // --- Per-roll checks (for current player, human or not) ---
+
+    // Lucky Roller: both dice show horse
+    if (event != null &&
+        event != prev.lastEvent &&
+        event.roll.green == DiceFace.horse &&
+        event.roll.red == DiceFace.horse &&
+        currentPlayer != null &&
+        !currentPlayer.isAi) {
+      _tryUnlock(AchievementId.luckyRoller);
+    }
+
+    // Dog Lover: own both dogs simultaneously
+    if (currentPlayer != null && !currentPlayer.isAi) {
+      if (currentPlayer.countOf(Animal.smallDog) >= 1 &&
+          currentPlayer.countOf(Animal.bigDog) >= 1) {
+        _tryUnlock(AchievementId.dogLover);
+      }
+
+      // Full Barn: 10+ of every farm animal at once
+      final farmAnimals = Animal.values
+          .where((a) => a != Animal.smallDog && a != Animal.bigDog);
+      if (farmAnimals.every((a) => currentPlayer.countOf(a) >= 10)) {
+        _tryUnlock(AchievementId.fullBarn);
+      }
+
+      // Fox Outsmarted: blocked a fox attack (small dog sacrificed)
+      if (event != null &&
+          event != prev.lastEvent &&
+          event.smallDogSacrificed &&
+          event.foxAttack) {
+        _tryIncrement(AchievementId.foxOutsmarted);
+      }
+    }
+
+    // --- Win checks ---
+    if (next.winner != null && prev.winner == null) {
+      // Find the winning player
+      final winner = next.players.firstWhere((p) => p.name == next.winner);
+      if (!winner.isAi) {
+        // First Farm: win first game
+        _tryUnlock(AchievementId.firstFarm);
+
+        // Farmer Pro: win 50 games (increment)
+        _tryIncrement(AchievementId.farmerPro);
+
+        // Speed Farmer: win in under 15 turns
+        // turnNumber is total turns across all players
+        final turnsPerPlayer = next.turnNumber ~/ next.players.length;
+        if (turnsPerPlayer < 15) {
+          _tryUnlock(AchievementId.speedFarmer);
+        }
+
+        // Horse Whisperer: win with 3+ horses
+        if (winner.countOf(Animal.horse) >= 3) {
+          _tryUnlock(AchievementId.horseWhisperer);
+        }
+
+        // Survivor: survive 3 wolf attacks in one game
+        if (winner.wolfAttacksSurvived >= 3) {
+          _tryUnlock(AchievementId.survivor);
+        }
+
+        // Underdog: win from behind (was lowest % at turn 20+)
+        if (winner.wasBehindAtTurn20) {
+          _tryUnlock(AchievementId.underdog);
+        }
+      }
+    }
+
+    // Show notifications for newly unlocked achievements
+    if (newlyUnlocked.isNotEmpty && mounted) {
+      for (final achievement in newlyUnlocked) {
+        _showAchievementNotification(achievement);
+      }
+    }
+  }
+
+  void _showAchievementNotification(AchievementDefinition achievement) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(achievement.icon, color: Colors.amber, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Achievement Unlocked!',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    achievement.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.green.shade800,
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       ),
     );
   }
