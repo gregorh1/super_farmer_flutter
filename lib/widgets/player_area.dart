@@ -32,6 +32,13 @@ class PlayerArea extends StatefulWidget {
 
   static const exchangeRateValues = [6, 2, 3, 2];
 
+  static const exchangeRateLabels = [
+    '6 Rabbits = 1 Sheep',
+    '2 Sheep = 1 Pig',
+    '3 Pigs = 1 Cow',
+    '2 Cows = 1 Horse',
+  ];
+
   static const playerColors = [
     Color(0xFF2E7D32),
     Color(0xFF1565C0),
@@ -75,25 +82,21 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    // Attack shake: rapid horizontal oscillation
     _attackShakeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
 
-    // Attack flash: red overlay that fades
     _attackFlashController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
 
-    // Dog sacrifice: amber flash
     _dogSacrificeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
 
-    // Create pop controllers for all animals
     for (final animal in Animal.values) {
       final controller = AnimationController(
         vsync: this,
@@ -114,7 +117,6 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
   void didUpdateWidget(PlayerArea oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Detect count changes and trigger pop animations
     for (final animal in Animal.values) {
       final oldCount = _previousCounts[animal] ?? 0;
       final newCount = widget.player.countOf(animal);
@@ -126,7 +128,6 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
       for (final a in Animal.values) a: widget.player.countOf(a),
     };
 
-    // Check for attack/defense events on this player
     final event = widget.gameState.lastEvent;
     if (event != null &&
         event != _lastAnimatedEvent &&
@@ -135,18 +136,15 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
 
       if (event.foxAttack || event.wolfAttack) {
         if (event.smallDogSacrificed || event.bigDogSacrificed) {
-          // Dog protected - amber sacrifice flash
           _dogSacrificeController.forward(from: 0);
         }
         if (event.lostAnimals.isNotEmpty) {
-          // Animals lost - red flash + shake
           _attackFlashController.forward(from: 0);
           _attackShakeController.forward(from: 0);
         }
       }
     }
 
-    // Clear animated event when turn changes
     if (widget.gameState.lastEvent == null) {
       _lastAnimatedEvent = null;
     }
@@ -165,15 +163,17 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final color = PlayerArea.playerColors[widget.playerIndex % PlayerArea.playerColors.length];
+    final color =
+        PlayerArea.playerColors[widget.playerIndex % PlayerArea.playerColors.length];
     final theme = Theme.of(context);
 
     return AnimatedBuilder(
-      animation: Listenable.merge([_attackShakeController, _attackFlashController, _dogSacrificeController]),
+      animation: Listenable.merge(
+          [_attackShakeController, _attackFlashController, _dogSacrificeController]),
       builder: (context, child) {
-        // Compute shake offset: damped sinusoidal oscillation
         final t = _attackShakeController.value;
-        final shakeOffset = t == 0 ? 0.0 : math.sin(t * math.pi * 4) * 6 * (1 - t);
+        final shakeOffset =
+            t == 0 ? 0.0 : math.sin(t * math.pi * 4) * 6 * (1 - t);
         return Transform.translate(
           offset: Offset(shakeOffset, 0),
           child: Stack(
@@ -181,7 +181,9 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: widget.isCurrentPlayer ? color : color.withValues(alpha: 0.3),
+                    color: widget.isCurrentPlayer
+                        ? color
+                        : color.withValues(alpha: 0.3),
                     width: widget.isCurrentPlayer ? 3 : 1,
                   ),
                   borderRadius: BorderRadius.circular(12),
@@ -200,23 +202,17 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
                 ),
                 clipBehavior: Clip.hardEdge,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.center,
-                    child: SizedBox(
-                      width: 400,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildHeader(color, theme),
-                          const SizedBox(height: 2),
-                          _buildAnimalRow(color, theme),
-                          const SizedBox(height: 2),
-                          _buildDogRow(color, theme),
-                        ],
-                      ),
-                    ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildHeader(color, theme),
+                      const SizedBox(height: 4),
+                      _buildAnimalRow(color, theme),
+                      const SizedBox(height: 4),
+                      _buildDogRow(color, theme),
+                    ],
                   ),
                 ),
               ),
@@ -228,7 +224,11 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         color: Colors.red.withValues(
-                          alpha: (_attackFlashController.value * 0.35 * (1 - _attackFlashController.value) * 4).clamp(0, 0.35),
+                          alpha: (_attackFlashController.value *
+                                  0.35 *
+                                  (1 - _attackFlashController.value) *
+                                  4)
+                              .clamp(0, 0.35),
                         ),
                       ),
                     ),
@@ -242,7 +242,11 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         color: Colors.amber.withValues(
-                          alpha: (_dogSacrificeController.value * 0.4 * (1 - _dogSacrificeController.value) * 4).clamp(0, 0.4),
+                          alpha: (_dogSacrificeController.value *
+                                  0.4 *
+                                  (1 - _dogSacrificeController.value) *
+                                  4)
+                              .clamp(0, 0.4),
                         ),
                       ),
                     ),
@@ -260,8 +264,8 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
     return Row(
       children: [
         Container(
-          width: 10,
-          height: 10,
+          width: 12,
+          height: 12,
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
@@ -270,10 +274,10 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
                 : null,
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 8),
         Text(
           widget.player.name,
-          style: theme.textTheme.labelLarge?.copyWith(
+          style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: widget.isCurrentPlayer ? color : null,
           ),
@@ -281,17 +285,17 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
         const Spacer(),
         Text(
           '$progressPercent%',
-          style: theme.textTheme.labelSmall?.copyWith(
+          style: theme.textTheme.labelMedium?.copyWith(
             color: color,
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 8),
         SizedBox(
-          width: 60,
-          height: 6,
+          width: 80,
+          height: 8,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: _winProgress,
               backgroundColor: color.withValues(alpha: 0.15),
@@ -328,8 +332,8 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
-          width: 26,
-          height: 26,
+          width: 36,
+          height: 36,
           child: Opacity(
             opacity: hasOne ? 1.0 : 0.4,
             child: SvgPicture.asset(animal.assetPath, fit: BoxFit.contain),
@@ -339,7 +343,6 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
         AnimatedBuilder(
           animation: popAnim,
           builder: (context, child) {
-            // Pop effect: scale up to 1.4 then settle back to 1.0
             final t = popAnim.value;
             final scale = t == 0 ? 1.0 : 1.0 + 0.4 * math.sin(t * math.pi);
             return Transform.scale(
@@ -347,7 +350,7 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
               child: Text(
                 '$count',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 15,
                   fontWeight: FontWeight.bold,
                   color: hasOne
                       ? theme.colorScheme.onSurface
@@ -356,6 +359,13 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
               ),
             );
           },
+        ),
+        Text(
+          animal.label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            fontSize: 9,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
         ),
       ],
     );
@@ -382,39 +392,55 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
         widget.player.countOf(higherAnimal) >= 1 &&
         (widget.gameState.bank[lowerAnimal] ?? 0) >= rate;
 
-    return SizedBox(
-      width: 28,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _TradeButton(
-            icon: Icons.arrow_upward,
-            enabled: canTradeUp,
-            color: color,
-            onTap: () => widget.onTrade(forwardRate),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              '$rate',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
+    return Tooltip(
+      message: PlayerArea.exchangeRateLabels[index],
+      child: SizedBox(
+        width: 48,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 48,
+              height: 48,
+              child: IconButton(
+                onPressed: canTradeUp ? () => widget.onTrade(forwardRate) : null,
+                icon: Icon(Icons.arrow_upward, size: 20),
+                padding: EdgeInsets.zero,
                 color: color,
+                disabledColor: color.withValues(alpha: 0.2),
+                tooltip: canTradeUp ? '$rate:1' : 'Not enough animals',
               ),
             ),
-          ),
-          _TradeButton(
-            icon: Icons.arrow_downward,
-            enabled: canTradeDown,
-            color: color,
-            onTap: () => widget.onTrade(reverseRate),
-          ),
-        ],
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                '$rate:1',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 48,
+              height: 48,
+              child: IconButton(
+                onPressed:
+                    canTradeDown ? () => widget.onTrade(reverseRate) : null,
+                icon: Icon(Icons.arrow_downward, size: 20),
+                padding: EdgeInsets.zero,
+                color: color,
+                disabledColor: color.withValues(alpha: 0.2),
+                tooltip: canTradeDown ? '1:$rate' : 'Not enough animals',
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -433,16 +459,16 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
       children: [
         _buildDogCell(
           Animal.smallDog,
-          'Buy (1 Lamb)',
+          'Buy with 1 Lamb',
           canBuySmallDog,
           Exchange.rates[4],
           color,
           theme,
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 24),
         _buildDogCell(
           Animal.bigDog,
-          'Buy (1 Cow)',
+          'Buy with 1 Cow',
           canBuyBigDog,
           Exchange.rates[5],
           color,
@@ -454,7 +480,7 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
 
   Widget _buildDogCell(
     Animal dog,
-    String tooltip,
+    String label,
     bool canBuy,
     ExchangeRate rate,
     Color color,
@@ -467,14 +493,14 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
-          width: 18,
-          height: 18,
+          width: 24,
+          height: 24,
           child: Opacity(
             opacity: count > 0 ? 1.0 : 0.4,
             child: SvgPicture.asset(dog.assetPath, fit: BoxFit.contain),
           ),
         ),
-        const SizedBox(width: 3),
+        const SizedBox(width: 4),
         AnimatedBuilder(
           animation: popAnim,
           builder: (context, child) {
@@ -485,7 +511,7 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
               child: Text(
                 'x$count',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface,
                 ),
@@ -493,54 +519,22 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
             );
           },
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: 6),
         SizedBox(
-          height: 22,
+          height: 48,
           child: TextButton(
             onPressed: canBuy ? () => widget.onTrade(rate) : null,
             style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              minimumSize: const Size(48, 48),
+              textStyle:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
               foregroundColor: color,
             ),
-            child: Text(tooltip),
+            child: Text(label),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _TradeButton extends StatelessWidget {
-  const _TradeButton({
-    required this.icon,
-    required this.enabled,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final bool enabled;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 22,
-      height: 22,
-      child: IconButton(
-        onPressed: enabled ? onTap : null,
-        icon: Icon(icon, size: 14),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
-        color: color,
-        disabledColor: color.withValues(alpha: 0.2),
-        splashRadius: 12,
-        tooltip: enabled ? null : 'Not enough animals',
-      ),
     );
   }
 }
