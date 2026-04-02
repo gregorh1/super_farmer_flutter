@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../models/ai_difficulty.dart';
 import '../models/animal.dart';
 import '../models/exchange.dart';
 import '../providers/game_provider.dart';
@@ -23,6 +26,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   late final AnimationController _transitionController;
   late final Animation<double> _fadeAnimation;
   late final Animation<Offset> _slideAnimation;
+  bool _aiTurnInProgress = false;
 
   @override
   void initState() {
@@ -50,6 +54,83 @@ class _GameScreenState extends ConsumerState<GameScreen>
     super.dispose();
   }
 
+  /// Executes an AI player's full turn with natural delays.
+  Future<void> _executeAiTurn() async {
+    if (_aiTurnInProgress) return;
+    _aiTurnInProgress = true;
+
+    final notifier = ref.read(gameProvider.notifier);
+    notifier.setAiThinking(true);
+
+    // Delay before rolling — feels like AI is "thinking"
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
+
+    // Check we're still on an AI turn (game might have been reset)
+    final gameBeforeRoll = ref.read(gameProvider);
+    if (!gameBeforeRoll.isStarted || !gameBeforeRoll.isCurrentPlayerAi) {
+      _aiTurnInProgress = false;
+      notifier.setAiThinking(false);
+      return;
+    }
+
+    // Roll dice
+    notifier.rollDice();
+
+    // Brief pause to show the dice result
+    await Future.delayed(const Duration(milliseconds: 1200));
+    if (!mounted) return;
+
+    // Check for winner after roll
+    if (ref.read(gameProvider).winner != null) {
+      notifier.setAiThinking(false);
+      _aiTurnInProgress = false;
+      return;
+    }
+
+    // Compute and execute trades with delays between each
+    final trades = notifier.computeAiTrades();
+    if (trades.isNotEmpty) {
+      for (final trade in trades) {
+        await Future.delayed(const Duration(milliseconds: 600));
+        if (!mounted) return;
+        if (ref.read(gameProvider).winner != null) break;
+        notifier.trade(trade);
+      }
+      notifier.setAiTradesMade(trades);
+
+      // Pause to show trade results
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+    }
+
+    // Check for winner after trades
+    if (ref.read(gameProvider).winner != null) {
+      notifier.setAiThinking(false);
+      _aiTurnInProgress = false;
+      return;
+    }
+
+    // End turn
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (!mounted) return;
+    notifier.setAiThinking(false);
+    notifier.nextTurn();
+    _aiTurnInProgress = false;
+
+    // If the next player is also AI, schedule their turn
+    _maybeStartAiTurn();
+  }
+
+  /// Checks if the current player is AI and starts their turn.
+  void _maybeStartAiTurn() {
+    final game = ref.read(gameProvider);
+    if (game.isStarted && game.isCurrentPlayerAi && game.winner == null) {
+      // Use a microtask delay to avoid triggering during build
+      Future.microtask(() => _executeAiTurn());
+    }
+  }
+
   void _startGame() {
     final setup = ref.read(playerSetupProvider);
     final names = List.generate(
@@ -60,9 +141,26 @@ class _GameScreenState extends ConsumerState<GameScreen>
       setup.playerCount,
       (i) => setup.playerColor(i),
     );
+    final isAiList = List.generate(
+      setup.playerCount,
+      (i) => i < setup.isAi.length && setup.isAi[i],
+    );
+    final aiDifficulties = List.generate(
+      setup.playerCount,
+      (i) => i < setup.aiDifficulties.length
+          ? setup.aiDifficulties[i]
+          : AiDifficulty.medium,
+    );
 
-    ref.read(gameProvider.notifier).startGame(names, colors);
+    ref
+        .read(gameProvider.notifier)
+        .startGame(names, colors, isAiList, aiDifficulties);
     _transitionController.forward(from: 0.0);
+
+    // If first player is AI, trigger their turn after the transition
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeStartAiTurn();
+    });
   }
 
   @override
@@ -73,6 +171,18 @@ class _GameScreenState extends ConsumerState<GameScreen>
       if (next.winner != null && (prev?.winner == null)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _showWinnerDialog(next.winner!);
+        });
+      }
+
+      // Detect turn change to an AI player and trigger their turn
+      if (next.isStarted &&
+          next.winner == null &&
+          next.isCurrentPlayerAi &&
+          (prev == null ||
+              prev.currentPlayerIndex != next.currentPlayerIndex ||
+              !prev.isStarted)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _maybeStartAiTurn();
         });
       }
     });
@@ -174,6 +284,11 @@ class _GameScreenState extends ConsumerState<GameScreen>
                   for (int j = 0; j < setup.playerCount; j++) {
                     if (j != i) usedColors.add(setup.playerColorIndices[j]);
                   }
+                  final isPlayerAi =
+                      i < setup.isAi.length && setup.isAi[i];
+                  final difficulty = i < setup.aiDifficulties.length
+                      ? setup.aiDifficulties[i]
+                      : AiDifficulty.medium;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: PlayerSetupCard(
@@ -181,6 +296,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
                       name: setup.playerNames[i],
                       selectedColorIndex: setup.playerColorIndices[i],
                       usedColorIndices: usedColors,
+                      isAi: isPlayerAi,
+                      aiDifficulty: difficulty,
                       onNameChanged: (name) {
                         ref
                             .read(playerSetupProvider.notifier)
@@ -190,6 +307,16 @@ class _GameScreenState extends ConsumerState<GameScreen>
                         ref
                             .read(playerSetupProvider.notifier)
                             .setPlayerColor(i, colorIndex);
+                      },
+                      onAiChanged: (val) {
+                        ref
+                            .read(playerSetupProvider.notifier)
+                            .setIsAi(i, val);
+                      },
+                      onAiDifficultyChanged: (diff) {
+                        ref
+                            .read(playerSetupProvider.notifier)
+                            .setAiDifficulty(i, diff);
                       },
                     ),
                   );
@@ -223,6 +350,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
   }
 
   Widget _buildBoard(BuildContext context, GameState game) {
+    final isAiTurn = game.isCurrentPlayerAi;
+
     return Column(
       children: [
         // Compact strips for non-active players at the top
@@ -235,8 +364,13 @@ class _GameScreenState extends ConsumerState<GameScreen>
             child: Center(
               child: DiceCenter(
                 gameState: game,
-                onRoll: () => ref.read(gameProvider.notifier).rollDice(),
-                onEndTurn: () => ref.read(gameProvider.notifier).nextTurn(),
+                onRoll: isAiTurn
+                    ? () {} // AI rolls automatically
+                    : () => ref.read(gameProvider.notifier).rollDice(),
+                onEndTurn: isAiTurn
+                    ? () {} // AI ends turn automatically
+                    : () => ref.read(gameProvider.notifier).nextTurn(),
+                isAiTurn: isAiTurn,
               ),
             ),
           ),
@@ -250,7 +384,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
             playerIndex: game.currentPlayerIndex,
             isCurrentPlayer: true,
             gameState: game,
-            onTrade: (rate) => ref.read(gameProvider.notifier).trade(rate),
+            onTrade: isAiTurn
+                ? (_) {} // AI trades automatically
+                : (rate) => ref.read(gameProvider.notifier).trade(rate),
+            isAiTurn: isAiTurn,
           ),
         ),
       ],
@@ -456,18 +593,21 @@ class _CompactPlayerStrip extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // Color dot
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
+              // Color dot or AI icon
+              if (player.isAi)
+                Icon(Icons.smart_toy, size: 14, color: color)
+              else
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               // Name
-              Expanded(
+              Flexible(
                 child: Text(
                   player.name,
                   style: theme.textTheme.labelMedium?.copyWith(
@@ -476,6 +616,7 @@ class _CompactPlayerStrip extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 4),
               // Progress
               Text(
                 '$progressPercent%',
@@ -484,13 +625,13 @@ class _CompactPlayerStrip extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 3),
               // Tiny animal summary
               ...PlayerArea.farmAnimals.map((a) => Padding(
-                    padding: const EdgeInsets.only(left: 2),
+                    padding: const EdgeInsets.only(left: 1),
                     child: SizedBox(
-                      width: 12,
-                      height: 12,
+                      width: 10,
+                      height: 10,
                       child: Opacity(
                         opacity: player.countOf(a) > 0 ? 1.0 : 0.25,
                         child: SvgPicture.asset(a.assetPath,

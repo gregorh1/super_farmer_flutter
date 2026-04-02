@@ -14,6 +14,7 @@ class PlayerArea extends StatefulWidget {
     required this.isCurrentPlayer,
     required this.gameState,
     required this.onTrade,
+    this.isAiTurn = false,
   });
 
   final PlayerHerd player;
@@ -21,6 +22,7 @@ class PlayerArea extends StatefulWidget {
   final bool isCurrentPlayer;
   final GameState gameState;
   final void Function(ExchangeRate rate) onTrade;
+  final bool isAiTurn;
 
   static const farmAnimals = [
     Animal.rabbit,
@@ -363,7 +365,8 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
           animal.label,
           style: theme.textTheme.labelSmall?.copyWith(
             fontSize: 9,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            color: theme.colorScheme.onSurface
+                .withValues(alpha: theme.brightness == Brightness.dark ? 0.9 : 0.8),
           ),
         ),
       ],
@@ -384,10 +387,12 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
     );
 
     final canTradeUp = widget.isCurrentPlayer &&
+        !widget.isAiTurn &&
         widget.player.countOf(lowerAnimal) >= forwardRate.fromCount &&
         (widget.gameState.bank[higherAnimal] ?? 0) >= 1;
 
     final canTradeDown = widget.isCurrentPlayer &&
+        !widget.isAiTurn &&
         widget.player.countOf(higherAnimal) >= 1 &&
         (widget.gameState.bank[lowerAnimal] ?? 0) >= rate;
 
@@ -403,8 +408,12 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
               height: 48,
               child: IconButton(
                 onPressed: canTradeUp ? () => widget.onTrade(forwardRate) : null,
-                icon: Icon(Icons.arrow_upward, size: 20),
+                icon: Icon(Icons.arrow_upward, size: 24),
                 padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 44,
+                  minHeight: 44,
+                ),
                 color: color,
                 disabledColor: color.withValues(alpha: 0.2),
                 tooltip: canTradeUp ? '$rate:1' : 'Not enough animals',
@@ -431,8 +440,12 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
               child: IconButton(
                 onPressed:
                     canTradeDown ? () => widget.onTrade(reverseRate) : null,
-                icon: Icon(Icons.arrow_downward, size: 20),
+                icon: Icon(Icons.arrow_downward, size: 24),
                 padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 44,
+                  minHeight: 44,
+                ),
                 color: color,
                 disabledColor: color.withValues(alpha: 0.2),
                 tooltip: canTradeDown ? '1:$rate' : 'Not enough animals',
@@ -446,10 +459,12 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
 
   Widget _buildDogRow(Color color, ThemeData theme) {
     final canBuySmallDog = widget.isCurrentPlayer &&
+        !widget.isAiTurn &&
         widget.player.countOf(Animal.lamb) >= 1 &&
         (widget.gameState.bank[Animal.smallDog] ?? 0) >= 1;
 
     final canBuyBigDog = widget.isCurrentPlayer &&
+        !widget.isAiTurn &&
         widget.player.countOf(Animal.cow) >= 1 &&
         (widget.gameState.bank[Animal.bigDog] ?? 0) >= 1;
 
@@ -529,6 +544,8 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
               textStyle:
                   const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
               foregroundColor: color,
+              disabledForegroundColor: theme.colorScheme.onSurface
+                  .withValues(alpha: theme.brightness == Brightness.dark ? 0.8 : 0.38),
             ),
             child: Text(label),
           ),

@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../models/animal.dart';
 import '../models/dice.dart';
 import '../providers/game_provider.dart';
-import 'player_area.dart';
 
 class DiceCenter extends StatefulWidget {
   const DiceCenter({
@@ -11,11 +10,13 @@ class DiceCenter extends StatefulWidget {
     required this.gameState,
     required this.onRoll,
     required this.onEndTurn,
+    this.isAiTurn = false,
   });
 
   final GameState gameState;
   final VoidCallback onRoll;
   final VoidCallback onEndTurn;
+  final bool isAiTurn;
 
   @override
   State<DiceCenter> createState() => DiceCenterState();
@@ -139,8 +140,10 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
     _revealController.forward();
   }
 
-  bool get _canRoll => widget.gameState.lastRoll == null && !_isRolling;
-  bool get _canEndTurn => widget.gameState.lastRoll != null && !_isRolling;
+  bool get _canRoll =>
+      widget.gameState.lastRoll == null && !_isRolling && !widget.isAiTurn;
+  bool get _canEndTurn =>
+      widget.gameState.lastRoll != null && !_isRolling && !widget.isAiTurn;
 
   @override
   Widget build(BuildContext context) {
@@ -175,14 +178,17 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: playerColor,
-                      shape: BoxShape.circle,
+                  if (widget.isAiTurn)
+                    Icon(Icons.smart_toy, size: 18, color: playerColor)
+                  else
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: playerColor,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
@@ -197,6 +203,12 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
                 ],
               ),
             ),
+
+            // AI thinking indicator
+            if (widget.isAiTurn && widget.gameState.isAiThinking) ...[
+              const SizedBox(height: 8),
+              _AiThinkingIndicator(color: playerColor),
+            ],
             const SizedBox(height: 16),
 
             // Dice display area
@@ -210,7 +222,9 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
                 child: Text(
                   'Tap to roll the dice!',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    color: theme.brightness == Brightness.dark
+                        ? const Color(0xFFE0E0E0)
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.75),
                   ),
                 ),
               ),
@@ -255,6 +269,8 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
+                  disabledForegroundColor: theme.colorScheme.onSurface
+                      .withValues(alpha: theme.brightness == Brightness.dark ? 0.6 : 0.5),
                 ),
               ),
             ),
@@ -499,3 +515,75 @@ class _DieResult extends StatelessWidget {
     );
   }
 }
+
+/// Animated "AI is thinking..." indicator with pulsing dots.
+class _AiThinkingIndicator extends StatefulWidget {
+  const _AiThinkingIndicator({required this.color});
+
+  final Color color;
+
+  @override
+  State<_AiThinkingIndicator> createState() => _AiThinkingIndicatorState();
+}
+
+class _AiThinkingIndicatorState extends State<_AiThinkingIndicator>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.smart_toy, size: 16, color: widget.color),
+            const SizedBox(width: 6),
+            Text(
+              'Thinking',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: widget.color,
+              ),
+            ),
+            const SizedBox(width: 2),
+            ...List.generate(3, (i) {
+              final delay = i * 0.3;
+              final phase = ((_controller.value + delay) % 1.0);
+              final opacity = (0.3 + 0.7 * (phase < 0.5 ? phase * 2 : 2.0 - phase * 2)).clamp(0.3, 1.0);
+              return Opacity(
+                opacity: opacity,
+                child: Text(
+                  '.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: widget.color,
+                  ),
+                ),
+              );
+            }),
+          ],
+        );
+      },
+    );
+  }
+}
+
