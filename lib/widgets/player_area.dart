@@ -50,16 +50,25 @@ class PlayerArea extends StatelessWidget {
     final color = playerColors[playerIndex % playerColors.length];
     final theme = Theme.of(context);
 
+    final isDark = theme.brightness == Brightness.dark;
+    final surfaceColor = isCurrentPlayer
+        ? color.withValues(alpha: 0.08)
+        : isDark
+            ? const Color(0xFF1E1E1E)
+            : theme.colorScheme.surface;
+
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
-          color: isCurrentPlayer ? color : color.withValues(alpha: 0.3),
+          color: isCurrentPlayer
+              ? color
+              : isDark
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : color.withValues(alpha: 0.3),
           width: isCurrentPlayer ? 3 : 1,
         ),
         borderRadius: BorderRadius.circular(12),
-        color: isCurrentPlayer
-            ? color.withValues(alpha: 0.08)
-            : theme.colorScheme.surface,
+        color: surfaceColor,
         boxShadow: isCurrentPlayer
             ? [
                 BoxShadow(
@@ -95,7 +104,11 @@ class PlayerArea extends StatelessWidget {
   }
 
   Widget _buildHeader(Color color, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
     final progressPercent = (_winProgress * 100).round();
+    final progressColor = isDark && !isCurrentPlayer
+        ? const Color(0xFFE0E0E0)
+        : color;
     return Row(
       children: [
         Container(
@@ -114,15 +127,20 @@ class PlayerArea extends StatelessWidget {
           player.name,
           style: theme.textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: isCurrentPlayer ? color : null,
+            color: isCurrentPlayer
+                ? color
+                : isDark
+                    ? const Color(0xFFE0E0E0)
+                    : null,
           ),
         ),
         const Spacer(),
         Text(
           '$progressPercent%',
           style: theme.textTheme.labelSmall?.copyWith(
-            color: color,
+            color: progressColor,
             fontWeight: FontWeight.bold,
+            fontSize: 12,
           ),
         ),
         const SizedBox(width: 6),
@@ -161,12 +179,20 @@ class PlayerArea extends StatelessWidget {
   Widget _buildAnimalCell(Animal animal, ThemeData theme) {
     final count = player.countOf(animal);
     final hasOne = count >= 1;
+    final isDark = theme.brightness == Brightness.dark;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: 26,
-          height: 26,
+        Container(
+          width: 30,
+          height: 30,
+          decoration: isDark
+              ? BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(6),
+                )
+              : null,
+          padding: const EdgeInsets.all(2),
           child: Opacity(
             opacity: hasOne ? 1.0 : 0.4,
             child: SvgPicture.asset(animal.assetPath, fit: BoxFit.contain),
@@ -208,8 +234,9 @@ class PlayerArea extends StatelessWidget {
         player.countOf(higherAnimal) >= 1 &&
         (gameState.bank[lowerAnimal] ?? 0) >= rate;
 
+    final isDark = theme.brightness == Brightness.dark;
     return SizedBox(
-      width: 28,
+      width: 32,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -220,17 +247,21 @@ class PlayerArea extends StatelessWidget {
             onTap: () => onTrade(forwardRate),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            width: 22,
+            height: 22,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(4),
+              color: isDark
+                  ? color.withValues(alpha: 0.25)
+                  : color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(11),
             ),
             child: Text(
               '$rate',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: color,
+                color: isDark ? const Color(0xFFE0E0E0) : color,
               ),
             ),
           ),
@@ -287,36 +318,43 @@ class PlayerArea extends StatelessWidget {
     ThemeData theme,
   ) {
     final count = player.countOf(dog);
+    final isDark = theme.brightness == Brightness.dark;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: 18,
-          height: 18,
+        Container(
+          width: 22,
+          height: 22,
+          decoration: isDark
+              ? BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(4),
+                )
+              : null,
           child: Opacity(
             opacity: count > 0 ? 1.0 : 0.4,
             child: SvgPicture.asset(dog.assetPath, fit: BoxFit.contain),
           ),
         ),
-        const SizedBox(width: 3),
+        const SizedBox(width: 4),
         Text(
           'x$count',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
           ),
         ),
         const SizedBox(width: 4),
         SizedBox(
-          height: 22,
+          height: 32,
           child: TextButton(
             onPressed: canBuy ? () => onTrade(rate) : null,
             style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              minimumSize: const Size(48, 32),
+              tapTargetSize: MaterialTapTargetSize.padded,
+              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
               foregroundColor: color,
             ),
             child: Text(tooltip),

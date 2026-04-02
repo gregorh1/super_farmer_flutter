@@ -46,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF1B5E20) : const Color(0xFF2E7D32);
+    final bgColor = isDark ? const Color(0xFF121212) : const Color(0xFF2E7D32);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -58,15 +58,28 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  '\u{1F69C}',
-                  style: TextStyle(fontSize: 80),
+                // App icon with farm theme
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF2E7D32)
+                        : Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '\u{1F69C}',
+                      style: TextStyle(fontSize: 56),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Text(
                   'Super Farmer',
                   style: theme.textTheme.headlineLarge?.copyWith(
-                    color: Colors.white,
+                    color: isDark ? const Color(0xFFE0E0E0) : Colors.white,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
                   ),
@@ -75,16 +88,20 @@ class _SplashScreenState extends State<SplashScreen>
                 Text(
                   'Collect your animals!',
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: Colors.white70,
+                    color: isDark
+                        ? const Color(0xFFE0E0E0).withValues(alpha: 0.7)
+                        : Colors.white70,
                   ),
                 ),
                 const SizedBox(height: 48),
-                const SizedBox(
+                SizedBox(
                   width: 32,
                   height: 32,
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      isDark ? const Color(0xFF66BB6A) : Colors.white70,
+                    ),
                   ),
                 ),
               ],

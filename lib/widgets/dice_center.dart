@@ -27,9 +27,16 @@ class DiceCenter extends StatelessWidget {
         PlayerArea.playerColors[gameState.currentPlayerIndex % PlayerArea.playerColors.length];
     final currentPlayer = gameState.currentPlayer!;
 
+    final isDark = theme.brightness == Brightness.dark;
     return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: isDark ? 4 : 3,
+      color: isDark ? const Color(0xFF2C2C2C) : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: isDark
+            ? BorderSide(color: Colors.white.withValues(alpha: 0.1))
+            : BorderSide.none,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -56,14 +63,11 @@ class DiceCenter extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      "${currentPlayer.name}'s Turn",
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: playerColor,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                  Text(
+                    "${currentPlayer.name}'s Turn",
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: playerColor,
                     ),
                   ),
                 ],
@@ -110,16 +114,16 @@ class DiceCenter extends StatelessWidget {
   }
 
   Widget _buildDiceResults(BuildContext context, DiceRollResult roll) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 12,
+      runSpacing: 8,
       children: [
         _DieResult(
           face: roll.green,
           color: const Color(0xFF2E7D32),
           label: 'Green',
         ),
-        const SizedBox(width: 12),
         _DieResult(
           face: roll.red,
           color: const Color(0xFFC62828),
@@ -184,11 +188,11 @@ class _DieResult extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 3),
+        const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: FontWeight.w600,
             color: color,
           ),

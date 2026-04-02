@@ -67,16 +67,23 @@ class SuperFarmerTheme {
           indicatorColor: _farmGreenLight.withValues(alpha: 0.3),
         ),
         cardTheme: CardThemeData(
-          elevation: 1,
+          elevation: 2,
           color: const Color(0xFF1E1E1E),
           surfaceTintColor: _farmGreenLight.withValues(alpha: 0.05),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: Colors.white.withValues(alpha: 0.08),
+              width: 1,
+            ),
           ),
         ),
         floatingActionButtonTheme: FloatingActionButtonThemeData(
           backgroundColor: _farmGreenLight,
           foregroundColor: Colors.black,
+        ),
+        textTheme: const TextTheme(
+          labelSmall: TextStyle(color: Color(0xFFE0E0E0)),
         ),
       );
 
