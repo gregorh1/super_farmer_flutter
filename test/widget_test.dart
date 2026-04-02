@@ -8,8 +8,11 @@ import 'package:super_farmer/models/animal.dart';
 import 'package:super_farmer/models/dice.dart';
 import 'package:super_farmer/models/exchange.dart';
 import 'package:super_farmer/providers/game_provider.dart';
+import 'package:super_farmer/screens/game_screen.dart';
 import 'package:super_farmer/screens/splash_screen.dart';
 import 'package:super_farmer/theme.dart';
+import 'package:super_farmer/widgets/dice_center.dart';
+import 'package:super_farmer/widgets/player_area.dart';
 
 /// A fixed Random that always returns a specific sequence index.
 class FixedRandom implements Random {
@@ -781,6 +784,489 @@ void main() {
 
     test('legacy theme getter returns light theme', () {
       expect(SuperFarmerTheme.theme, SuperFarmerTheme.lightTheme);
+    });
+  });
+
+  group('nextTurn clears lastRoll', () {
+    test('lastRoll is cleared when advancing to next player', () {
+      final notifier = GameNotifier(FixedRandom(0));
+      notifier.startGame(['Alice', 'Bob']);
+
+      notifier.rollDice();
+      expect(notifier.state.lastRoll, isNotNull);
+
+      notifier.nextTurn();
+      expect(notifier.state.lastRoll, isNull);
+    });
+  });
+
+  group('PlayerArea widget', () {
+    Widget buildPlayerArea({
+      PlayerHerd? player,
+      int playerIndex = 0,
+      bool isCurrentPlayer = false,
+      GameState? gameState,
+    }) {
+      final state = gameState ??
+          GameState(
+            players: [
+              player ??
+                  PlayerHerd(
+                    name: 'Alice',
+                    animals: {for (final a in Animal.values) a: 0},
+                  ),
+            ],
+            currentPlayerIndex: 0,
+            isStarted: true,
+            bank: GameState.initialBank(),
+          );
+      return MaterialApp(
+        home: Scaffold(
+          body: PlayerArea(
+            player: state.players.isNotEmpty
+                ? state.players[playerIndex]
+                : (player ??
+                    PlayerHerd(
+                      name: 'Alice',
+                      animals: {for (final a in Animal.values) a: 0},
+                    )),
+            playerIndex: playerIndex,
+            isCurrentPlayer: isCurrentPlayer,
+            gameState: state,
+            onTrade: (_) {},
+          ),
+        ),
+      );
+    }
+
+    testWidgets('displays player name', (tester) async {
+      await tester.pumpWidget(buildPlayerArea());
+      expect(find.text('Alice'), findsOneWidget);
+    });
+
+    testWidgets('displays progress percentage', (tester) async {
+      final player = PlayerHerd(
+        name: 'Alice',
+        animals: {
+          Animal.rabbit: 1,
+          Animal.lamb: 1,
+          Animal.pig: 0,
+          Animal.cow: 0,
+          Animal.horse: 0,
+          Animal.smallDog: 0,
+          Animal.bigDog: 0,
+        },
+      );
+      await tester.pumpWidget(buildPlayerArea(player: player));
+      // 2 out of 5 = 40%
+      expect(find.text('40%'), findsOneWidget);
+    });
+
+    testWidgets('displays exchange rate numbers', (tester) async {
+      await tester.pumpWidget(buildPlayerArea());
+      // Exchange rates: 6, 2, 3, 2
+      expect(find.text('6'), findsOneWidget);
+      expect(find.text('3'), findsOneWidget);
+      // '2' appears twice (lamb→pig and cow→horse exchange rates)
+      expect(find.text('2'), findsAtLeast(2));
+    });
+
+    testWidgets('displays animal counts', (tester) async {
+      final player = PlayerHerd(
+        name: 'Alice',
+        animals: {
+          Animal.rabbit: 5,
+          Animal.lamb: 3,
+          Animal.pig: 0,
+          Animal.cow: 0,
+          Animal.horse: 0,
+          Animal.smallDog: 0,
+          Animal.bigDog: 0,
+        },
+      );
+      await tester.pumpWidget(buildPlayerArea(player: player));
+      expect(find.text('5'), findsOneWidget);
+    });
+
+    testWidgets('shows dog buy buttons', (tester) async {
+      await tester.pumpWidget(buildPlayerArea());
+      expect(find.text('Buy (1 Lamb)'), findsOneWidget);
+      expect(find.text('Buy (1 Cow)'), findsOneWidget);
+    });
+
+    testWidgets('shows progress bar', (tester) async {
+      await tester.pumpWidget(buildPlayerArea());
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('current player has highlighted border', (tester) async {
+      await tester.pumpWidget(buildPlayerArea(isCurrentPlayer: true));
+      // Find the Container with BoxDecoration (the player area wrapper)
+      final containers = tester.widgetList<Container>(find.byType(Container));
+      final decorated = containers.where((c) {
+        final d = c.decoration;
+        return d is BoxDecoration && d.border != null;
+      });
+      expect(decorated, isNotEmpty);
+      final border = (decorated.first.decoration as BoxDecoration).border as Border;
+      expect(border.top.width, 3.0);
+    });
+
+    testWidgets('non-current player has thinner border', (tester) async {
+      await tester.pumpWidget(buildPlayerArea(isCurrentPlayer: false));
+      final containers = tester.widgetList<Container>(find.byType(Container));
+      final decorated = containers.where((c) {
+        final d = c.decoration;
+        return d is BoxDecoration && d.border != null;
+      });
+      expect(decorated, isNotEmpty);
+      final border = (decorated.first.decoration as BoxDecoration).border as Border;
+      expect(border.top.width, 1.0);
+    });
+
+    testWidgets('trade up buttons exist for each exchange pair', (tester) async {
+      await tester.pumpWidget(buildPlayerArea(isCurrentPlayer: true));
+      // Should have 4 up arrows and 4 down arrows for exchanges
+      expect(find.byIcon(Icons.arrow_upward), findsNWidgets(4));
+      expect(find.byIcon(Icons.arrow_downward), findsNWidgets(4));
+    });
+
+    testWidgets('player colors are distinct', (tester) async {
+      expect(PlayerArea.playerColors.length, 4);
+      final colorSet = PlayerArea.playerColors.toSet();
+      expect(colorSet.length, 4);
+    });
+  });
+
+  group('DiceCenter widget', () {
+    Widget buildDiceCenter({
+      GameState? gameState,
+      VoidCallback? onRoll,
+      VoidCallback? onEndTurn,
+    }) {
+      final state = gameState ??
+          GameState(
+            players: [
+              PlayerHerd(
+                name: 'Alice',
+                animals: {for (final a in Animal.values) a: 0},
+              ),
+            ],
+            currentPlayerIndex: 0,
+            isStarted: true,
+            bank: GameState.initialBank(),
+          );
+      return MaterialApp(
+        home: Scaffold(
+          body: DiceCenter(
+            gameState: state,
+            onRoll: onRoll ?? () {},
+            onEndTurn: onEndTurn ?? () {},
+          ),
+        ),
+      );
+    }
+
+    testWidgets('shows current player name', (tester) async {
+      await tester.pumpWidget(buildDiceCenter());
+      expect(find.text("Alice's Turn"), findsOneWidget);
+    });
+
+    testWidgets('shows Roll Dice button', (tester) async {
+      await tester.pumpWidget(buildDiceCenter());
+      expect(find.text('Roll Dice'), findsOneWidget);
+    });
+
+    testWidgets('shows End Turn button', (tester) async {
+      await tester.pumpWidget(buildDiceCenter());
+      expect(find.text('End Turn'), findsOneWidget);
+    });
+
+    testWidgets('Roll Dice is enabled before rolling', (tester) async {
+      await tester.pumpWidget(buildDiceCenter());
+      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      expect(button.onPressed, isNotNull);
+    });
+
+    testWidgets('End Turn is disabled before rolling', (tester) async {
+      await tester.pumpWidget(buildDiceCenter());
+      final button = tester.widget<OutlinedButton>(find.byType(OutlinedButton));
+      expect(button.onPressed, isNull);
+    });
+
+    testWidgets('Roll Dice is disabled after rolling', (tester) async {
+      final state = GameState(
+        players: [
+          PlayerHerd(
+            name: 'Alice',
+            animals: {for (final a in Animal.values) a: 0},
+          ),
+        ],
+        currentPlayerIndex: 0,
+        isStarted: true,
+        bank: GameState.initialBank(),
+        lastRoll: const DiceRollResult(green: DiceFace.rabbit, red: DiceFace.rabbit),
+      );
+      await tester.pumpWidget(buildDiceCenter(gameState: state));
+      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      expect(button.onPressed, isNull);
+    });
+
+    testWidgets('End Turn is enabled after rolling', (tester) async {
+      final state = GameState(
+        players: [
+          PlayerHerd(
+            name: 'Alice',
+            animals: {for (final a in Animal.values) a: 0},
+          ),
+        ],
+        currentPlayerIndex: 0,
+        isStarted: true,
+        bank: GameState.initialBank(),
+        lastRoll: const DiceRollResult(green: DiceFace.rabbit, red: DiceFace.rabbit),
+      );
+      await tester.pumpWidget(buildDiceCenter(gameState: state));
+      final button = tester.widget<OutlinedButton>(find.byType(OutlinedButton));
+      expect(button.onPressed, isNotNull);
+    });
+
+    testWidgets('calls onRoll when Roll Dice is tapped', (tester) async {
+      bool rolled = false;
+      await tester.pumpWidget(buildDiceCenter(onRoll: () => rolled = true));
+      await tester.tap(find.text('Roll Dice'));
+      expect(rolled, true);
+    });
+
+    testWidgets('shows dice icon', (tester) async {
+      await tester.pumpWidget(buildDiceCenter());
+      expect(find.byIcon(Icons.casino), findsOneWidget);
+    });
+  });
+
+  group('GameScreen', () {
+    Widget buildGameScreen({List<Override>? overrides}) {
+      return ProviderScope(
+        overrides: overrides ?? [],
+        child: const MaterialApp(home: GameScreen()),
+      );
+    }
+
+    testWidgets('shows setup screen when game not started', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      expect(find.text('Super Farmer'), findsOneWidget);
+      expect(find.text('Start Game'), findsOneWidget);
+    });
+
+    testWidgets('setup screen has player count selector', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      expect(find.text('Number of Players'), findsOneWidget);
+      // SegmentedButton segments for 2, 3, 4
+      expect(find.byType(SegmentedButton<int>), findsOneWidget);
+    });
+
+    testWidgets('shows player count options 2, 3, 4', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      // The SegmentedButton should have options for 2, 3, 4
+      expect(find.text('2'), findsOneWidget);
+      expect(find.text('3'), findsOneWidget);
+      expect(find.text('4'), findsOneWidget);
+    });
+
+    testWidgets('starts game with selected player count', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+
+      // Default is 4 players, tap Start Game
+      await tester.tap(find.text('Start Game'));
+      await tester.pumpAndSettle();
+
+      // Should show board with player areas
+      expect(find.text('Player 1'), findsOneWidget);
+      expect(find.text('Player 2'), findsOneWidget);
+      expect(find.text('Player 3'), findsOneWidget);
+      expect(find.text('Player 4'), findsOneWidget);
+    });
+
+    testWidgets('board shows Roll Dice button', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      await tester.tap(find.text('Start Game'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Roll Dice'), findsOneWidget);
+    });
+
+    testWidgets('board shows End Turn button', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      await tester.tap(find.text('Start Game'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('End Turn'), findsOneWidget);
+    });
+
+    testWidgets('board shows current player indicator', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      await tester.tap(find.text('Start Game'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Player 1's Turn"), findsOneWidget);
+    });
+
+    testWidgets('has reset button in app bar', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      await tester.tap(find.text('Start Game'));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.restart_alt), findsOneWidget);
+    });
+
+    testWidgets('board uses RotatedBox for player layout', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      await tester.tap(find.text('Start Game'));
+      await tester.pumpAndSettle();
+
+      // With 4 players: Player 3 (180°), Player 4 (90°), Player 2 (-90°/270°)
+      final rotatedBoxes = tester.widgetList<RotatedBox>(find.byType(RotatedBox));
+      expect(rotatedBoxes.length, 3); // 3 rotated players
+
+      final turns = rotatedBoxes.map((r) => r.quarterTurns).toSet();
+      expect(turns, containsAll([1, 2, 3]));
+    });
+
+    testWidgets('shows 4 PlayerArea widgets for 4-player game', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      await tester.tap(find.text('Start Game'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PlayerArea), findsNWidgets(4));
+    });
+
+    testWidgets('shows DiceCenter widget', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      await tester.tap(find.text('Start Game'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DiceCenter), findsOneWidget);
+    });
+
+    testWidgets('can start a 2-player game', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+
+      // Select 2 players
+      await tester.tap(find.text('2'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Start Game'));
+      await tester.pumpAndSettle();
+
+      // Should show 2 player areas
+      expect(find.byType(PlayerArea), findsNWidgets(2));
+      expect(find.text('Player 1'), findsOneWidget);
+      expect(find.text('Player 2'), findsOneWidget);
+    });
+
+    testWidgets('reset button returns to setup screen', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      await tester.tap(find.text('Start Game'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.restart_alt));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Start Game'), findsOneWidget);
+    });
+
+    testWidgets('shows progress bars for all players', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      await tester.tap(find.text('Start Game'));
+      await tester.pumpAndSettle();
+
+      // 4 players = 4 progress bars
+      expect(find.byType(LinearProgressIndicator), findsNWidgets(4));
+    });
+
+    testWidgets('all players start at 0% progress', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      await tester.tap(find.text('Start Game'));
+      await tester.pumpAndSettle();
+
+      // All players should show 0%
+      expect(find.text('0%'), findsNWidgets(4));
+    });
+
+    testWidgets('shows player color chips in setup', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      // Default 4 players selected, should show 4 color chips
+      expect(find.byType(Chip), findsNWidgets(4));
+      expect(find.text('P1'), findsOneWidget);
+      expect(find.text('P2'), findsOneWidget);
+      expect(find.text('P3'), findsOneWidget);
+      expect(find.text('P4'), findsOneWidget);
+    });
+  });
+
+  group('PlayerArea win progress', () {
+    test('0 animals collected = 0% progress', () {
+      final herd = PlayerHerd(
+        name: 'Test',
+        animals: {for (final a in Animal.values) a: 0},
+      );
+      int count = 0;
+      for (final a in PlayerArea.farmAnimals) {
+        if (herd.countOf(a) >= 1) count++;
+      }
+      expect(count / 5.0, 0.0);
+    });
+
+    test('all farm animals collected = 100% progress', () {
+      final herd = PlayerHerd(
+        name: 'Test',
+        animals: {
+          Animal.rabbit: 1,
+          Animal.lamb: 1,
+          Animal.pig: 1,
+          Animal.cow: 1,
+          Animal.horse: 1,
+        },
+      );
+      int count = 0;
+      for (final a in PlayerArea.farmAnimals) {
+        if (herd.countOf(a) >= 1) count++;
+      }
+      expect(count / 5.0, 1.0);
+    });
+
+    test('3 of 5 farm animals = 60% progress', () {
+      final herd = PlayerHerd(
+        name: 'Test',
+        animals: {
+          Animal.rabbit: 1,
+          Animal.lamb: 1,
+          Animal.pig: 1,
+          Animal.cow: 0,
+          Animal.horse: 0,
+        },
+      );
+      int count = 0;
+      for (final a in PlayerArea.farmAnimals) {
+        if (herd.countOf(a) >= 1) count++;
+      }
+      expect(count / 5.0, 0.6);
+    });
+
+    test('farmAnimals list contains exactly 5 non-dog animals', () {
+      expect(PlayerArea.farmAnimals.length, 5);
+      expect(PlayerArea.farmAnimals, contains(Animal.rabbit));
+      expect(PlayerArea.farmAnimals, contains(Animal.lamb));
+      expect(PlayerArea.farmAnimals, contains(Animal.pig));
+      expect(PlayerArea.farmAnimals, contains(Animal.cow));
+      expect(PlayerArea.farmAnimals, contains(Animal.horse));
+    });
+
+    test('exchangeRateValues match Exchange.rates', () {
+      expect(PlayerArea.exchangeRateValues.length, 4);
+      expect(PlayerArea.exchangeRateValues[0], 6); // rabbit→lamb
+      expect(PlayerArea.exchangeRateValues[1], 2); // lamb→pig
+      expect(PlayerArea.exchangeRateValues[2], 3); // pig→cow
+      expect(PlayerArea.exchangeRateValues[3], 2); // cow→horse
     });
   });
 }

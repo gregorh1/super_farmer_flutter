@@ -107,6 +107,7 @@ class GameNotifier extends StateNotifier<GameState> {
     state = state.copyWith(
       currentPlayerIndex:
           (state.currentPlayerIndex + 1) % state.players.length,
+      clearLastRoll: true,
     );
   }
 
