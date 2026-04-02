@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../models/animal.dart';
-import '../models/exchange.dart';
 import '../providers/game_provider.dart';
 
 class PlayerArea extends StatelessWidget {
@@ -10,15 +8,13 @@ class PlayerArea extends StatelessWidget {
     required this.player,
     required this.playerIndex,
     required this.isCurrentPlayer,
-    required this.gameState,
-    required this.onTrade,
+    this.onTap,
   });
 
   final PlayerHerd player;
   final int playerIndex;
   final bool isCurrentPlayer;
-  final GameState gameState;
-  final void Function(ExchangeRate rate) onTrade;
+  final VoidCallback? onTap;
 
   static const farmAnimals = [
     Animal.rabbit,
@@ -28,7 +24,15 @@ class PlayerArea extends StatelessWidget {
     Animal.horse,
   ];
 
-  static const exchangeRateValues = [6, 2, 3, 2];
+  static const animalEmojis = {
+    Animal.rabbit: '\u{1F407}',
+    Animal.lamb: '\u{1F411}',
+    Animal.pig: '\u{1F437}',
+    Animal.cow: '\u{1F404}',
+    Animal.horse: '\u{1F40E}',
+    Animal.smallDog: '\u{1F436}',
+    Animal.bigDog: '\u{1F415}',
+  };
 
   static const playerColors = [
     Color(0xFF2E7D32),
@@ -51,7 +55,6 @@ class PlayerArea extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // Softer borders in dark mode
     final borderColor = isCurrentPlayer
         ? color
         : isDark
@@ -61,41 +64,44 @@ class PlayerArea extends StatelessWidget {
         ? color.withValues(alpha: isDark ? 0.12 : 0.08)
         : theme.colorScheme.surface;
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: borderColor,
-          width: isCurrentPlayer ? 3 : 1,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: borderColor,
+            width: isCurrentPlayer ? 3 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          color: bgColor,
+          boxShadow: isCurrentPlayer
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
         ),
-        borderRadius: BorderRadius.circular(12),
-        color: bgColor,
-        boxShadow: isCurrentPlayer
-            ? [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                ),
-              ]
-            : null,
-      ),
-      clipBehavior: Clip.hardEdge,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.center,
-          child: SizedBox(
-            width: 440,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildHeader(color, theme),
-                const SizedBox(height: 3),
-                _buildAnimalRow(color, theme),
-                const SizedBox(height: 3),
-                _buildDogRow(color, theme),
-              ],
+        clipBehavior: Clip.hardEdge,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
+            child: SizedBox(
+              width: 340,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildHeader(color, theme),
+                  const SizedBox(height: 2),
+                  _buildAnimalRow(theme),
+                  const SizedBox(height: 2),
+                  _buildDogRow(theme),
+                ],
+              ),
             ),
           ),
         ),
@@ -109,8 +115,8 @@ class PlayerArea extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 12,
-          height: 12,
+          width: 10,
+          height: 10,
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
@@ -119,31 +125,30 @@ class PlayerArea extends StatelessWidget {
                 : null,
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 4),
         Text(
           player.name,
-          style: theme.textTheme.titleSmall?.copyWith(
+          style: TextStyle(
+            fontSize: 13,
             fontWeight: FontWeight.bold,
-            color: isCurrentPlayer
-                ? color
-                : theme.colorScheme.onSurface,
+            color: isCurrentPlayer ? color : theme.colorScheme.onSurface,
           ),
         ),
         const Spacer(),
         Text(
           '$progressPercent%',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 12,
             color: isDark ? color.withValues(alpha: 0.9) : color,
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 4),
         SizedBox(
-          width: 70,
-          height: 8,
+          width: 50,
+          height: 6,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(3),
             child: LinearProgressIndicator(
               value: _winProgress,
               backgroundColor: color.withValues(alpha: isDark ? 0.2 : 0.15),
@@ -155,223 +160,64 @@ class PlayerArea extends StatelessWidget {
     );
   }
 
-  Widget _buildAnimalRow(Color color, ThemeData theme) {
-    final widgets = <Widget>[];
-    for (int i = 0; i < farmAnimals.length; i++) {
-      widgets.add(
-        Expanded(child: _buildAnimalCell(farmAnimals[i], theme)),
-      );
-      if (i < farmAnimals.length - 1) {
-        widgets.add(_buildExchangeControl(i, color, theme));
-      }
-    }
+  Widget _buildAnimalRow(ThemeData theme) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: widgets,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: farmAnimals.map((animal) {
+        final count = player.countOf(animal);
+        final hasOne = count >= 1;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              animalEmojis[animal]!,
+              style: TextStyle(
+                fontSize: 22,
+                color: hasOne ? null : theme.colorScheme.onSurface.withValues(alpha: 0.3),
+              ),
+            ),
+            Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: hasOne
+                    ? theme.colorScheme.onSurface
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+            ),
+          ],
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildAnimalCell(Animal animal, ThemeData theme) {
-    final count = player.countOf(animal);
-    final hasOne = count >= 1;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+  Widget _buildDogRow(ThemeData theme) {
+    final smallDogCount = player.countOf(Animal.smallDog);
+    final bigDogCount = player.countOf(Animal.bigDog);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        SizedBox(
-          width: 30,
-          height: 30,
-          child: Opacity(
-            opacity: hasOne ? 1.0 : 0.4,
-            child: SvgPicture.asset(animal.assetPath, fit: BoxFit.contain),
+        Text(
+          '${animalEmojis[Animal.smallDog]}$smallDogCount',
+          style: TextStyle(
+            fontSize: 12,
+            color: smallDogCount > 0
+                ? theme.colorScheme.onSurface
+                : theme.colorScheme.onSurface.withValues(alpha: 0.4),
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(width: 12),
         Text(
-          '$count',
+          '${animalEmojis[Animal.bigDog]}$bigDogCount',
           style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: hasOne
+            fontSize: 12,
+            color: bigDogCount > 0
                 ? theme.colorScheme.onSurface
                 : theme.colorScheme.onSurface.withValues(alpha: 0.4),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildExchangeControl(int index, Color color, ThemeData theme) {
-    final rate = exchangeRateValues[index];
-    final lowerAnimal = farmAnimals[index];
-    final higherAnimal = farmAnimals[index + 1];
-
-    final forwardRate = Exchange.rates[index];
-    final reverseRate = ExchangeRate(
-      from: higherAnimal,
-      fromCount: 1,
-      to: lowerAnimal,
-      toCount: rate,
-    );
-
-    final canTradeUp = isCurrentPlayer &&
-        player.countOf(lowerAnimal) >= forwardRate.fromCount &&
-        (gameState.bank[higherAnimal] ?? 0) >= 1;
-
-    final canTradeDown = isCurrentPlayer &&
-        player.countOf(higherAnimal) >= 1 &&
-        (gameState.bank[lowerAnimal] ?? 0) >= rate;
-
-    final isDark = theme.brightness == Brightness.dark;
-
-    return SizedBox(
-      width: 36,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _TradeButton(
-            icon: Icons.arrow_upward,
-            enabled: canTradeUp,
-            color: color,
-            onTap: () => onTrade(forwardRate),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: isDark ? 0.2 : 0.1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              '$rate',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: isDark ? color.withValues(alpha: 0.9) : color,
-              ),
-            ),
-          ),
-          _TradeButton(
-            icon: Icons.arrow_downward,
-            enabled: canTradeDown,
-            color: color,
-            onTap: () => onTrade(reverseRate),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDogRow(Color color, ThemeData theme) {
-    final canBuySmallDog = isCurrentPlayer &&
-        player.countOf(Animal.lamb) >= 1 &&
-        (gameState.bank[Animal.smallDog] ?? 0) >= 1;
-
-    final canBuyBigDog = isCurrentPlayer &&
-        player.countOf(Animal.cow) >= 1 &&
-        (gameState.bank[Animal.bigDog] ?? 0) >= 1;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildDogCell(
-          Animal.smallDog,
-          '1 Lmb',
-          canBuySmallDog,
-          Exchange.rates[4],
-          color,
-          theme,
-        ),
-        const SizedBox(width: 16),
-        _buildDogCell(
-          Animal.bigDog,
-          '1 Cow',
-          canBuyBigDog,
-          Exchange.rates[5],
-          color,
-          theme,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDogCell(
-    Animal dog,
-    String costLabel,
-    bool canBuy,
-    ExchangeRate rate,
-    Color color,
-    ThemeData theme,
-  ) {
-    final count = player.countOf(dog);
-    final isDark = theme.brightness == Brightness.dark;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 20,
-          height: 20,
-          child: Opacity(
-            opacity: count > 0 ? 1.0 : 0.4,
-            child: SvgPicture.asset(dog.assetPath, fit: BoxFit.contain),
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          'x$count',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(width: 4),
-        SizedBox(
-          height: 30,
-          child: TextButton(
-            onPressed: canBuy ? () => onTrade(rate) : null,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              minimumSize: const Size(48, 30),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              foregroundColor: isDark ? color.withValues(alpha: 0.9) : color,
-            ),
-            child: Text('Buy ($costLabel)'),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TradeButton extends StatelessWidget {
-  const _TradeButton({
-    required this.icon,
-    required this.enabled,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final bool enabled;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    // Minimum 32x32 for better tap targets (outer padding provides 48dp effective area)
-    return SizedBox(
-      width: 32,
-      height: 32,
-      child: IconButton(
-        onPressed: enabled ? onTap : null,
-        icon: Icon(icon, size: 18),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
-        color: color,
-        disabledColor: color.withValues(alpha: 0.2),
-        splashRadius: 16,
-        tooltip: enabled ? null : 'Not enough animals',
-      ),
     );
   }
 }

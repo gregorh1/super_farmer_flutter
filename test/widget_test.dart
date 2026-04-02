@@ -832,8 +832,6 @@ void main() {
                     )),
             playerIndex: playerIndex,
             isCurrentPlayer: isCurrentPlayer,
-            gameState: state,
-            onTrade: (_) {},
           ),
         ),
       );
@@ -862,13 +860,11 @@ void main() {
       expect(find.text('40%'), findsOneWidget);
     });
 
-    testWidgets('displays exchange rate numbers', (tester) async {
+    testWidgets('displays animal emojis', (tester) async {
       await tester.pumpWidget(buildPlayerArea());
-      // Exchange rates: 6, 2, 3, 2
-      expect(find.text('6'), findsOneWidget);
-      expect(find.text('3'), findsOneWidget);
-      // '2' appears twice (lamb→pig and cow→horse exchange rates)
-      expect(find.text('2'), findsAtLeast(2));
+      // Should show emoji for each farm animal
+      expect(find.text('\u{1F407}'), findsOneWidget); // rabbit
+      expect(find.text('\u{1F411}'), findsOneWidget); // lamb
     });
 
     testWidgets('displays animal counts', (tester) async {
@@ -888,10 +884,11 @@ void main() {
       expect(find.text('5'), findsOneWidget);
     });
 
-    testWidgets('shows dog buy buttons', (tester) async {
+    testWidgets('shows dog counts', (tester) async {
       await tester.pumpWidget(buildPlayerArea());
-      expect(find.text('Buy (1 Lamb)'), findsOneWidget);
-      expect(find.text('Buy (1 Cow)'), findsOneWidget);
+      // Dog emoji + count should appear
+      expect(find.textContaining('\u{1F436}'), findsOneWidget); // small dog
+      expect(find.textContaining('\u{1F415}'), findsOneWidget); // big dog
     });
 
     testWidgets('shows progress bar', (tester) async {
@@ -924,11 +921,23 @@ void main() {
       expect(border.top.width, 1.0);
     });
 
-    testWidgets('trade up buttons exist for each exchange pair', (tester) async {
-      await tester.pumpWidget(buildPlayerArea(isCurrentPlayer: true));
-      // Should have 4 up arrows and 4 down arrows for exchanges
-      expect(find.byIcon(Icons.arrow_upward), findsNWidgets(4));
-      expect(find.byIcon(Icons.arrow_downward), findsNWidgets(4));
+    testWidgets('tapping current player area triggers onTap', (tester) async {
+      bool tapped = false;
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: PlayerArea(
+            player: PlayerHerd(
+              name: 'Alice',
+              animals: {for (final a in Animal.values) a: 0},
+            ),
+            playerIndex: 0,
+            isCurrentPlayer: true,
+            onTap: () => tapped = true,
+          ),
+        ),
+      ));
+      await tester.tap(find.text('Alice'));
+      expect(tapped, true);
     });
 
     testWidgets('player colors are distinct', (tester) async {
@@ -962,6 +971,7 @@ void main() {
             gameState: state,
             onRoll: onRoll ?? () {},
             onEndTurn: onEndTurn ?? () {},
+            onTrade: () {},
           ),
         ),
       );
@@ -1261,12 +1271,11 @@ void main() {
       expect(PlayerArea.farmAnimals, contains(Animal.horse));
     });
 
-    test('exchangeRateValues match Exchange.rates', () {
-      expect(PlayerArea.exchangeRateValues.length, 4);
-      expect(PlayerArea.exchangeRateValues[0], 6); // rabbit→lamb
-      expect(PlayerArea.exchangeRateValues[1], 2); // lamb→pig
-      expect(PlayerArea.exchangeRateValues[2], 3); // pig→cow
-      expect(PlayerArea.exchangeRateValues[3], 2); // cow→horse
+    test('animalEmojis has entries for all animals', () {
+      expect(PlayerArea.animalEmojis.length, 7);
+      for (final a in Animal.values) {
+        expect(PlayerArea.animalEmojis.containsKey(a), true);
+      }
     });
   });
 }

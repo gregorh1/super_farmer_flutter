@@ -4,6 +4,7 @@ import '../providers/game_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/dice_center.dart';
 import '../widgets/player_area.dart';
+import '../widgets/trade_sheet.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
@@ -107,7 +108,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 },
               ),
               const SizedBox(height: 8),
-              // Player color preview
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(_playerCount, (i) {
@@ -157,13 +157,13 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     final hasLeftPlayer = playerCount >= 4;
     final hasRightPlayer = playerCount >= 2;
 
-    // Responsive sizing — use more screen real estate
+    // Responsive sizing
     final isCompact = constraints.maxHeight < 500;
-    final playerAreaHeight = isCompact ? 110.0 : 135.0;
-    final sidePlayerWidth = isCompact ? 120.0 : 145.0;
+    final playerAreaHeight = isCompact ? 90.0 : 110.0;
+    final sidePlayerWidth = isCompact ? 100.0 : 120.0;
 
     return Padding(
-      padding: const EdgeInsets.all(6),
+      padding: const EdgeInsets.all(4),
       child: Column(
         children: [
           // Top player (Player 3, rotated 180°)
@@ -176,7 +176,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 child: _buildPlayerArea(game, 2),
               ),
             ),
-          if (hasTopPlayer) const SizedBox(height: 6),
+          if (hasTopPlayer) const SizedBox(height: 4),
 
           // Middle row: left player, center, right player
           Expanded(
@@ -192,7 +192,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       child: _buildPlayerArea(game, 3),
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                 ],
 
                 // Center dice area
@@ -204,13 +204,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                           ref.read(gameProvider.notifier).rollDice(),
                       onEndTurn: () =>
                           ref.read(gameProvider.notifier).nextTurn(),
+                      onTrade: () => _showTradeSheet(context, game),
                     ),
                   ),
                 ),
 
-                // Right player (Player 2, rotated -90° = 3 quarter turns)
+                // Right player (Player 2, rotated -90°)
                 if (hasRightPlayer) ...[
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                   SizedBox(
                     width: sidePlayerWidth,
                     child: RotatedBox(
@@ -223,8 +224,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             ),
           ),
 
-          const SizedBox(height: 6),
-          // Bottom player (Player 1, no rotation)
+          const SizedBox(height: 4),
+          // Bottom player (Player 1)
           SizedBox(
             height: playerAreaHeight,
             width: double.infinity,
@@ -240,8 +241,30 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       player: game.players[playerIndex],
       playerIndex: playerIndex,
       isCurrentPlayer: game.currentPlayerIndex == playerIndex,
-      gameState: game,
-      onTrade: (rate) => ref.read(gameProvider.notifier).trade(rate),
+      onTap: game.currentPlayerIndex == playerIndex
+          ? () => _showTradeSheet(context, game)
+          : null,
+    );
+  }
+
+  void _showTradeSheet(BuildContext context, GameState game) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Consumer(
+          builder: (ctx, ref, _) {
+            final currentGame = ref.watch(gameProvider);
+            return TradeSheet(
+              gameState: currentGame,
+              onTrade: (rate) {
+                ref.read(gameProvider.notifier).trade(rate);
+              },
+            );
+          },
+        );
+      },
     );
   }
 

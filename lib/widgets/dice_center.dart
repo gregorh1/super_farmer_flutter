@@ -11,11 +11,13 @@ class DiceCenter extends StatelessWidget {
     required this.gameState,
     required this.onRoll,
     required this.onEndTurn,
+    required this.onTrade,
   });
 
   final GameState gameState;
   final VoidCallback onRoll;
   final VoidCallback onEndTurn;
+  final VoidCallback onTrade;
 
   bool get _canRoll => gameState.lastRoll == null;
   bool get _canEndTurn => gameState.lastRoll != null;
@@ -37,14 +39,14 @@ class DiceCenter extends StatelessWidget {
             : BorderSide.none,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Current player indicator — no text truncation
+            // Current player indicator
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: playerColor.withValues(alpha: isDark ? 0.2 : 0.12),
                 borderRadius: BorderRadius.circular(20),
@@ -61,7 +63,7 @@ class DiceCenter extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Text(
                     "${currentPlayer.name}'s Turn",
                     style: theme.textTheme.titleSmall?.copyWith(
@@ -74,46 +76,69 @@ class DiceCenter extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             // Dice results
             if (gameState.lastRoll != null) ...[
               _buildDiceResults(context, gameState.lastRoll!),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
             ],
 
-            // Roll button
-            FilledButton.icon(
-              onPressed: _canRoll ? onRoll : null,
-              icon: const Icon(Icons.casino, size: 20),
-              label: const Text('Roll Dice'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            // Roll button — wide
+            SizedBox(
+              width: 160,
+              child: FilledButton.icon(
+                onPressed: _canRoll ? onRoll : null,
+                icon: const Icon(Icons.casino, size: 20),
+                label: const Text('Roll Dice'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
 
-            // End turn button — explicit styling for dark mode visibility
-            OutlinedButton.icon(
-              onPressed: _canEndTurn ? onEndTurn : null,
-              icon: const Icon(Icons.skip_next, size: 20),
-              label: const Text('End Turn'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                foregroundColor: isDark
-                    ? const Color(0xFFE0E0E0)
-                    : theme.colorScheme.primary,
-                side: BorderSide(
-                  color: isDark
-                      ? const Color(0xFF81C784).withValues(alpha: 0.6)
+            // End turn button — wide
+            SizedBox(
+              width: 160,
+              child: OutlinedButton.icon(
+                onPressed: _canEndTurn ? onEndTurn : null,
+                icon: const Icon(Icons.skip_next, size: 20),
+                label: const Text('End Turn'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  foregroundColor: isDark
+                      ? const Color(0xFFE0E0E0)
                       : theme.colorScheme.primary,
-                  width: isDark ? 1.5 : 1,
+                  side: BorderSide(
+                    color: isDark
+                        ? const Color(0xFF81C784).withValues(alpha: 0.6)
+                        : theme.colorScheme.primary,
+                    width: isDark ? 1.5 : 1,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+
+            // Trade button
+            SizedBox(
+              width: 160,
+              child: TextButton.icon(
+                onPressed: onTrade,
+                icon: const Icon(Icons.swap_horiz, size: 20),
+                label: const Text('Trade'),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -173,8 +198,8 @@ class _DieResult extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 56,
-          height: 56,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(10),
@@ -192,17 +217,17 @@ class _DieResult extends StatelessWidget {
           child: Center(
             child: SvgPicture.asset(
               _assetPath,
-              width: 34,
-              height: 34,
+              width: 30,
+              height: 30,
               fit: BoxFit.contain,
             ),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 3),
         Text(
           label,
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: FontWeight.w600,
             color: color,
           ),
