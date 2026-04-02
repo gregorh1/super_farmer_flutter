@@ -14,24 +14,61 @@ class AnimalCard extends StatelessWidget {
   final int? count;
   final double size;
 
+  static const _animalEmoji = {
+    Animal.rabbit: '🐇',
+    Animal.lamb: '🐑',
+    Animal.pig: '🐷',
+    Animal.cow: '🐄',
+    Animal.horse: '🐴',
+    Animal.smallDog: '🐕',
+    Animal.bigDog: '🦮',
+  };
+
+  static const _animalBgColor = {
+    Animal.rabbit: Color(0xFFF5F5F5),
+    Animal.lamb: Color(0xFFFFF8E1),
+    Animal.pig: Color(0xFFFCE4EC),
+    Animal.cow: Color(0xFFEFEBE9),
+    Animal.horse: Color(0xFFFFF3E0),
+    Animal.smallDog: Color(0xFFFFF3E0),
+    Animal.bigDog: Color(0xFFE8EAF6),
+  };
+
   @override
   Widget build(BuildContext context) {
+    final bgColor = _animalBgColor[animal] ?? Colors.grey.shade100;
+
     return Card(
+      color: bgColor,
       child: SizedBox(
         width: size,
         height: size,
         child: Stack(
           children: [
+            // Faint emoji background accent
+            Positioned(
+              right: -2,
+              bottom: -2,
+              child: Text(
+                _animalEmoji[animal] ?? '',
+                style: TextStyle(
+                  fontSize: size * 0.32,
+                  color: Colors.black.withValues(alpha: 0.07),
+                ),
+              ),
+            ),
+            // SVG icon
             Center(
               child: SizedBox(
-                width: size * 0.65,
-                height: size * 0.65,
+                width: size * 0.55,
+                height: size * 0.55,
                 child: SvgPicture.asset(
                   animal.assetPath,
                   fit: BoxFit.contain,
                 ),
               ),
             ),
+            // Label
             Positioned(
               bottom: 4,
               left: 0,
@@ -39,9 +76,13 @@ class AnimalCard extends StatelessWidget {
               child: Text(
                 animal.label,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: size * 0.12),
+                style: TextStyle(
+                  fontSize: size * 0.12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
+            // Count badge
             if (count != null)
               Positioned(
                 top: 2,

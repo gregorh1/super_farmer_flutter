@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../models/animal.dart';
 import '../models/exchange.dart';
 import '../providers/game_provider.dart';
 import '../utils/constants.dart';
@@ -45,11 +47,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         ],
       ),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return _buildBoard(context, game, constraints);
-          },
-        ),
+        child: _buildBoard(context, game),
       ),
     );
   }
@@ -108,7 +106,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 },
               ),
               const SizedBox(height: 8),
-              // Player color preview
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(_playerCount, (i) {
@@ -151,98 +148,65 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     );
   }
 
-  Widget _buildBoard(
-      BuildContext context, GameState game, BoxConstraints constraints) {
-    final playerCount = game.players.length;
-    final hasTopPlayer = playerCount >= 3;
-    final hasLeftPlayer = playerCount >= 4;
-    final hasRightPlayer = playerCount >= 2;
+  Widget _buildBoard(BuildContext context, GameState game) {
+    return Column(
+      children: [
+        // Compact strips for non-active players at the top
+        _buildCompactPlayerStrips(context, game),
 
-    // Responsive sizing
-    final isCompact = constraints.maxHeight < 500;
-    final playerAreaHeight = isCompact ? 100.0 : 120.0;
-    final sidePlayerWidth = isCompact ? 110.0 : 130.0;
-
-    return Padding(
-      padding: const EdgeInsets.all(4),
-      child: Column(
-        children: [
-          // Top player (Player 3, rotated 180°)
-          if (hasTopPlayer)
-            SizedBox(
-              height: playerAreaHeight,
-              width: double.infinity,
-              child: RotatedBox(
-                quarterTurns: 2,
-                child: _buildPlayerArea(game, 2),
+        // Center dice area — expanded to fill middle
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Center(
+              child: DiceCenter(
+                gameState: game,
+                onRoll: () => ref.read(gameProvider.notifier).rollDice(),
+                onEndTurn: () => ref.read(gameProvider.notifier).nextTurn(),
               ),
             ),
-          if (hasTopPlayer) const SizedBox(height: 4),
-
-          // Middle row: left player, center, right player
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Left player (Player 4, rotated 90°)
-                if (hasLeftPlayer) ...[
-                  SizedBox(
-                    width: sidePlayerWidth,
-                    child: RotatedBox(
-                      quarterTurns: 1,
-                      child: _buildPlayerArea(game, 3),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                ],
-
-                // Center dice area
-                Expanded(
-                  child: Center(
-                    child: DiceCenter(
-                      gameState: game,
-                      onRoll: () =>
-                          ref.read(gameProvider.notifier).rollDice(),
-                      onEndTurn: () =>
-                          ref.read(gameProvider.notifier).nextTurn(),
-                    ),
-                  ),
-                ),
-
-                // Right player (Player 2, rotated -90° = 3 quarter turns)
-                if (hasRightPlayer) ...[
-                  const SizedBox(width: 4),
-                  SizedBox(
-                    width: sidePlayerWidth,
-                    child: RotatedBox(
-                      quarterTurns: 3,
-                      child: _buildPlayerArea(game, 1),
-                    ),
-                  ),
-                ],
-              ],
-            ),
           ),
+        ),
 
-          const SizedBox(height: 4),
-          // Bottom player (Player 1, no rotation)
-          SizedBox(
-            height: playerAreaHeight,
-            width: double.infinity,
-            child: _buildPlayerArea(game, 0),
+        // Active player's full panel at the bottom
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          child: PlayerArea(
+            player: game.players[game.currentPlayerIndex],
+            playerIndex: game.currentPlayerIndex,
+            isCurrentPlayer: true,
+            gameState: game,
+            onTrade: (rate) => ref.read(gameProvider.notifier).trade(rate),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildPlayerArea(GameState game, int playerIndex) {
-    return PlayerArea(
-      player: game.players[playerIndex],
-      playerIndex: playerIndex,
-      isCurrentPlayer: game.currentPlayerIndex == playerIndex,
-      gameState: game,
-      onTrade: (rate) => ref.read(gameProvider.notifier).trade(rate),
+  Widget _buildCompactPlayerStrips(BuildContext context, GameState game) {
+    final otherPlayers = <int>[];
+    for (int i = 0; i < game.players.length; i++) {
+      if (i != game.currentPlayerIndex) otherPlayers.add(i);
+    }
+    if (otherPlayers.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+      child: Row(
+        children: [
+          for (int i = 0; i < otherPlayers.length; i++) ...[
+            if (i > 0) const SizedBox(width: 6),
+            Expanded(
+              child: _CompactPlayerStrip(
+                player: game.players[otherPlayers[i]],
+                playerIndex: otherPlayers[i],
+                gameState: game,
+                onTrade: (rate) => ref.read(gameProvider.notifier).trade(rate),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -255,6 +219,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 12,
           title: Row(
             children: [
               const Icon(Icons.emoji_events, color: Colors.amber, size: 32),
@@ -277,6 +242,228 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+/// Compact strip showing a non-active player's summary.
+/// Tapping opens a detail popup.
+class _CompactPlayerStrip extends StatelessWidget {
+  const _CompactPlayerStrip({
+    required this.player,
+    required this.playerIndex,
+    required this.gameState,
+    required this.onTrade,
+  });
+
+  final PlayerHerd player;
+  final int playerIndex;
+  final GameState gameState;
+  final void Function(ExchangeRate rate) onTrade;
+
+  double get _winProgress {
+    int collected = 0;
+    for (final a in PlayerArea.farmAnimals) {
+      if (player.countOf(a) >= 1) collected++;
+    }
+    return collected / 5.0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color =
+        PlayerArea.playerColors[playerIndex % PlayerArea.playerColors.length];
+    final theme = Theme.of(context);
+    final progressPercent = (_winProgress * 100).round();
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showPlayerDetail(context),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            border: Border.all(color: color.withValues(alpha: 0.4)),
+            borderRadius: BorderRadius.circular(10),
+            color: color.withValues(alpha: 0.05),
+          ),
+          child: Row(
+            children: [
+              // Color dot
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              // Name
+              Expanded(
+                child: Text(
+                  player.name,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // Progress
+              Text(
+                '$progressPercent%',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 4),
+              // Tiny animal summary
+              ...PlayerArea.farmAnimals.map((a) => Padding(
+                    padding: const EdgeInsets.only(left: 2),
+                    child: SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: Opacity(
+                        opacity: player.countOf(a) > 0 ? 1.0 : 0.25,
+                        child: SvgPicture.asset(a.assetPath,
+                            fit: BoxFit.contain),
+                      ),
+                    ),
+                  )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showPlayerDetail(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        final color = PlayerArea
+            .playerColors[playerIndex % PlayerArea.playerColors.length];
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Player name header
+              Row(
+                children: [
+                  Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    player.name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${(_winProgress * 100).round()}% complete',
+                    style: theme.textTheme.bodySmall?.copyWith(color: color),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Animal grid
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: PlayerArea.farmAnimals.map((animal) {
+                  final count = player.countOf(animal);
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Opacity(
+                          opacity: count > 0 ? 1.0 : 0.3,
+                          child: SvgPicture.asset(animal.assetPath,
+                              fit: BoxFit.contain),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$count',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        animal.label,
+                        style: theme.textTheme.labelSmall,
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 12),
+              // Dogs row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _dogInfo(Animal.smallDog, theme),
+                  const SizedBox(width: 24),
+                  _dogInfo(Animal.bigDog, theme),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _dogInfo(Animal dog, ThemeData theme) {
+    final count = player.countOf(dog);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Opacity(
+            opacity: count > 0 ? 1.0 : 0.3,
+            child: SvgPicture.asset(dog.assetPath, fit: BoxFit.contain),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          'x$count',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(dog.label, style: theme.textTheme.labelSmall),
+      ],
     );
   }
 }
