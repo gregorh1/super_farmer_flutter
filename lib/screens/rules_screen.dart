@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../models/animal.dart';
+import '../widgets/tutorial_carousel.dart';
 
 class RulesScreen extends StatelessWidget {
   const RulesScreen({super.key});
@@ -13,6 +14,64 @@ class RulesScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
         children: [
+          // Interactive tutorial card
+          Card(
+            child: InkWell(
+              onTap: () => TutorialCarousel.show(context),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color:
+                            theme.colorScheme.primary.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.play_circle_outline,
+                        size: 28,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Interactive Tutorial',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Step-by-step guide with animations',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: () => TutorialCarousel.show(context),
+                      icon: const Icon(Icons.play_arrow, size: 20),
+                      label: const Text('Start Tutorial'),
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Quick reference: How to Play
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -20,7 +79,7 @@ class RulesScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'How to Play',
+                    'Quick Reference',
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.primary,
@@ -43,6 +102,8 @@ class RulesScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+
+          // Animal values
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),

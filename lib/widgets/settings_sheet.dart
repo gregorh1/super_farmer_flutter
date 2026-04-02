@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/settings_provider.dart';
+import 'tutorial_carousel.dart';
 
 /// Bottom sheet for in-game settings.
 class SettingsSheet extends ConsumerWidget {
@@ -104,6 +105,25 @@ class SettingsSheet extends ConsumerWidget {
               value: settings.confirmEndTurn,
               onChanged: (_) =>
                   ref.read(gameSettingsProvider.notifier).toggleConfirmEndTurn(),
+            ),
+          ),
+          const Divider(height: 1),
+
+          // How to Play
+          _SettingsTile(
+            icon: Icons.menu_book,
+            title: 'How to Play',
+            subtitle: 'Interactive tutorial',
+            trailing: FilledButton.tonal(
+              onPressed: () {
+                Navigator.of(context).pop(); // close settings sheet
+                TutorialCarousel.show(context);
+              },
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text('Open', style: TextStyle(fontSize: 12)),
             ),
           ),
           const SizedBox(height: 8),
