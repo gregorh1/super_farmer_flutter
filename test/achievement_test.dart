@@ -10,6 +10,7 @@ import 'package:super_farmer/models/dice.dart';
 import 'package:super_farmer/providers/achievement_provider.dart';
 import 'package:super_farmer/providers/game_provider.dart';
 import 'package:super_farmer/screens/achievements_screen.dart';
+import 'package:super_farmer/l10n/app_localizations.dart';
 import 'package:super_farmer/screens/stats_screen.dart';
 
 /// A fixed Random that always returns a specific sequence index.
@@ -405,8 +406,11 @@ void main() {
 
     testWidgets('shows first achievements and progress header', (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
+        ProviderScope(
           child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: AchievementsScreen(),
           ),
         ),
@@ -426,8 +430,11 @@ void main() {
     testWidgets('shows unique icons for visible locked achievements',
         (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
+        ProviderScope(
           child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: AchievementsScreen(),
           ),
         ),
@@ -442,8 +449,11 @@ void main() {
 
     testWidgets('shows unlocked count text', (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
+        ProviderScope(
           child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: AchievementsScreen(),
           ),
         ),
@@ -455,8 +465,11 @@ void main() {
 
     testWidgets('can scroll to see more achievements', (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
+        ProviderScope(
           child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: AchievementsScreen(),
           ),
         ),
@@ -475,8 +488,11 @@ void main() {
     testWidgets('shows progress indicators for multi-step achievements',
         (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
+        ProviderScope(
           child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: AchievementsScreen(),
           ),
         ),
@@ -503,7 +519,10 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: AchievementsScreen(),
           ),
         ),
@@ -526,8 +545,11 @@ void main() {
 
     testWidgets('Achievements tab exists in stats screen', (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
+        ProviderScope(
           child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: StatsScreen(),
           ),
         ),
@@ -539,8 +561,11 @@ void main() {
 
     testWidgets('Achievements tab shows achievement list', (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
+        ProviderScope(
           child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: StatsScreen(),
           ),
         ),

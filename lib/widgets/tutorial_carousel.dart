@@ -2,6 +2,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../models/animal.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/l10n_helpers.dart';
 
 /// Interactive tutorial carousel explaining Super Farmer rules.
 /// Displays as a full-screen dialog with swipeable pages and progress dots.
@@ -57,24 +59,25 @@ class _TutorialCarouselState extends State<TutorialCarousel> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isLastPage = _currentPage == _pageCount - 1;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('How to Play'),
+        title: Text(l10n.howToPlay),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: _close,
-          tooltip: 'Close',
+          tooltip: l10n.close,
         ),
         actions: [
           if (!isLastPage)
             TextButton(
               onPressed: _close,
               child: Text(
-                'Skip',
+                l10n.skip,
                 style: TextStyle(
                   color: theme.appBarTheme.foregroundColor ?? Colors.white,
                 ),
@@ -121,9 +124,9 @@ class _TutorialCarouselState extends State<TutorialCarousel> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          child: const Text(
-                            'Got it!',
-                            style: TextStyle(
+                          child: Text(
+                            l10n.gotIt,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -131,9 +134,9 @@ class _TutorialCarouselState extends State<TutorialCarousel> {
                         )
                       : OutlinedButton.icon(
                           onPressed: _nextPage,
-                          icon: const Text(
-                            'Next',
-                            style: TextStyle(
+                          icon: Text(
+                            l10n.next,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
@@ -262,12 +265,11 @@ class _WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return _TutorialPageLayout(
       icon: Icons.agriculture,
-      title: 'Welcome to Super Farmer!',
-      description:
-          'A classic Polish board game where you build a farm by '
-          'collecting animals. Be the first to gather one of each animal type!',
+      title: l10n.tutorialWelcomeTitle,
+      description: l10n.tutorialWelcomeDesc,
       illustration: Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -307,7 +309,7 @@ class _AnimalBadge extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          animal.label,
+          localizedAnimalName(context, animal),
           style: theme.textTheme.labelSmall?.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -381,13 +383,11 @@ class _DiceRollingPageState extends State<_DiceRollingPage>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return _TutorialPageLayout(
       icon: Icons.casino,
-      title: 'Roll the Dice',
-      description:
-          'Each turn you roll two dice — one green and one red. '
-          'Each die shows animals (and one predator). '
-          'Tap below to try it!',
+      title: l10n.tutorialDiceTitle,
+      description: l10n.tutorialDiceDesc,
       illustration: Column(
         children: [
           AnimatedBuilder(
@@ -401,13 +401,13 @@ class _DiceRollingPageState extends State<_DiceRollingPage>
               children: [
                 _DemoDie(
                   color: const Color(0xFF2E7D32),
-                  label: 'Green',
+                  label: l10n.greenDie,
                   assetPath: _assetPath(_greenFaces[_greenIndex]),
                 ),
                 const SizedBox(width: 20),
                 _DemoDie(
                   color: const Color(0xFFC62828),
-                  label: 'Red',
+                  label: l10n.redDie,
                   assetPath: _assetPath(_redFaces[_redIndex]),
                 ),
               ],
@@ -417,7 +417,7 @@ class _DiceRollingPageState extends State<_DiceRollingPage>
           FilledButton.icon(
             onPressed: _roll,
             icon: const Icon(Icons.casino, size: 20),
-            label: const Text('Try Rolling'),
+            label: Text(l10n.tryRolling),
             style: FilledButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -532,13 +532,11 @@ class _BreedingPageState extends State<_BreedingPage>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return _TutorialPageLayout(
       icon: Icons.pets,
-      title: 'Animal Breeding',
-      description:
-          'When you roll an animal you already own, they breed! '
-          'New animals = (owned + rolled) \u00f7 2, rounded down. '
-          'Tap to see an example.',
+      title: l10n.tutorialBreedingTitle,
+      description: l10n.tutorialBreedingDesc,
       illustration: Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -548,7 +546,7 @@ class _BreedingPageState extends State<_BreedingPage>
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _countLabel(theme, 'You have:', '3'),
+                  _countLabel(theme, l10n.youHave, '3'),
                   const SizedBox(width: 8),
                   SizedBox(
                     width: 32,
@@ -561,7 +559,7 @@ class _BreedingPageState extends State<_BreedingPage>
                   const SizedBox(width: 16),
                   const Icon(Icons.add, size: 20),
                   const SizedBox(width: 16),
-                  _countLabel(theme, 'Rolled:', '2'),
+                  _countLabel(theme, l10n.rolled, '2'),
                   const SizedBox(width: 8),
                   SizedBox(
                     width: 32,
@@ -594,7 +592,7 @@ class _BreedingPageState extends State<_BreedingPage>
                             color: Colors.green.shade700, size: 18),
                         const SizedBox(width: 8),
                         Text(
-                          '(3 + 2) \u00f7 2 = 2 new rabbits!',
+                          l10n.breedingResult,
                           style: theme.textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Colors.green.shade700,
@@ -607,10 +605,10 @@ class _BreedingPageState extends State<_BreedingPage>
               const SizedBox(height: 12),
               _showResult
                   ? TextButton(
-                      onPressed: _reset, child: const Text('Reset'))
+                      onPressed: _reset, child: Text(l10n.reset))
                   : FilledButton.tonal(
                       onPressed: _demonstrate,
-                      child: const Text('Show Result'),
+                      child: Text(l10n.showResult),
                     ),
             ],
           ),
@@ -642,34 +640,32 @@ class _BreedingPageState extends State<_BreedingPage>
 class _TradingPage extends StatelessWidget {
   const _TradingPage();
 
-  static const _trades = [
-    ('6 Rabbits', Animal.rabbit, '1 Lamb', Animal.lamb),
-    ('2 Lambs', Animal.lamb, '1 Pig', Animal.pig),
-    ('3 Pigs', Animal.pig, '1 Cow', Animal.cow),
-    ('2 Cows', Animal.cow, '1 Horse', Animal.horse),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final trades = [
+      (l10n.trade6Rabbits, Animal.rabbit, l10n.trade1Lamb, Animal.lamb),
+      (l10n.trade2Lambs, Animal.lamb, l10n.trade1Pig, Animal.pig),
+      (l10n.trade3Pigs, Animal.pig, l10n.trade1Cow, Animal.cow),
+      (l10n.trade2Cows, Animal.cow, l10n.trade1Horse, Animal.horse),
+    ];
     return _TutorialPageLayout(
       icon: Icons.swap_horiz,
-      title: 'Trading Animals',
-      description:
-          'Between rolls you can trade animals with the bank. '
-          'Exchange smaller animals for bigger ones at these rates:',
+      title: l10n.tutorialTradingTitle,
+      description: l10n.tutorialTradingDesc,
       illustration: Card(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           child: Column(
             children: [
-              for (int i = 0; i < _trades.length; i++) ...[
+              for (int i = 0; i < trades.length; i++) ...[
                 if (i > 0) const Divider(height: 1),
                 _TradeRow(
-                  fromLabel: _trades[i].$1,
-                  fromAnimal: _trades[i].$2,
-                  toLabel: _trades[i].$3,
-                  toAnimal: _trades[i].$4,
+                  fromLabel: trades[i].$1,
+                  fromAnimal: trades[i].$2,
+                  toLabel: trades[i].$3,
+                  toAnimal: trades[i].$4,
                 ),
               ],
             ],
@@ -743,28 +739,27 @@ class _GuardDogsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return _TutorialPageLayout(
       icon: Icons.shield,
-      title: 'Guard Dogs',
-      description:
-          'Dogs protect your farm from predators. '
-          'Buy them by trading animals with the bank.',
+      title: l10n.tutorialDogsTitle,
+      description: l10n.tutorialDogsDesc,
       illustration: Column(
         children: [
           _DogInfoCard(
             dog: Animal.smallDog,
-            protectsAgainst: 'Fox',
+            protectsAgainst: l10n.blocksFox,
             protectsIcon: 'assets/images/fox.svg',
-            cost: '1 Lamb',
+            cost: l10n.trade1Lamb,
             costAnimal: Animal.lamb,
             color: Colors.orange,
           ),
           const SizedBox(height: 12),
           _DogInfoCard(
             dog: Animal.bigDog,
-            protectsAgainst: 'Wolf',
+            protectsAgainst: l10n.blocksWolf,
             protectsIcon: 'assets/images/wolf.svg',
-            cost: '1 Cow',
+            cost: l10n.trade1Cow,
             costAnimal: Animal.cow,
             color: Colors.indigo,
           ),
@@ -794,6 +789,7 @@ class _DogInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -810,7 +806,7 @@ class _DogInfoCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    dog.label,
+                    localizedAnimalName(context, dog),
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -821,7 +817,7 @@ class _DogInfoCard extends StatelessWidget {
                       Icon(Icons.shield, size: 14, color: color),
                       const SizedBox(width: 4),
                       Text(
-                        'Blocks $protectsAgainst',
+                        protectsAgainst,
                         style: theme.textTheme.bodySmall,
                       ),
                       const SizedBox(width: 4),
@@ -837,7 +833,7 @@ class _DogInfoCard extends StatelessWidget {
                     children: [
                       Icon(Icons.sell, size: 14, color: theme.colorScheme.primary),
                       const SizedBox(width: 4),
-                      Text('Cost: $cost', style: theme.textTheme.bodySmall),
+                      Text(l10n.costLabel(cost), style: theme.textTheme.bodySmall),
                     ],
                   ),
                 ],
@@ -900,18 +896,18 @@ class _AttacksPageState extends State<_AttacksPage>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return _TutorialPageLayout(
       icon: Icons.warning_amber,
-      title: 'Predator Attacks',
-      description:
-          'Watch out! Rolling a predator can devastate your farm.',
+      title: l10n.tutorialAttacksTitle,
+      description: l10n.tutorialAttacksDesc,
       illustration: Column(
         children: [
           _AttackCard(
             predatorAsset: 'assets/images/fox.svg',
-            predatorName: 'Fox',
-            effect: 'Steals ALL your rabbits',
-            guardLabel: 'Small Dog saves your rabbits',
+            attackTitle: l10n.foxAttackTitle,
+            effect: l10n.foxEffect,
+            guardLabel: l10n.smallDogSavesRabbits,
             guardAsset: Animal.smallDog.assetPath,
             color: Colors.red.shade700,
             shakeAnimation: _shakeOffset,
@@ -920,9 +916,9 @@ class _AttacksPageState extends State<_AttacksPage>
           const SizedBox(height: 12),
           _AttackCard(
             predatorAsset: 'assets/images/wolf.svg',
-            predatorName: 'Wolf',
-            effect: 'Steals everything except horses',
-            guardLabel: 'Big Dog saves your herd',
+            attackTitle: l10n.wolfAttackTitle,
+            effect: l10n.wolfEffect,
+            guardLabel: l10n.bigDogSavesHerd,
             guardAsset: Animal.bigDog.assetPath,
             color: Colors.blueGrey.shade700,
             shakeAnimation: _shakeOffset,
@@ -931,7 +927,7 @@ class _AttacksPageState extends State<_AttacksPage>
           const SizedBox(height: 12),
           FilledButton.tonal(
             onPressed: _isShaking ? null : _triggerShake,
-            child: const Text('Simulate Attack!'),
+            child: Text(l10n.simulateAttack),
           ),
         ],
       ),
@@ -942,7 +938,7 @@ class _AttacksPageState extends State<_AttacksPage>
 class _AttackCard extends StatelessWidget {
   const _AttackCard({
     required this.predatorAsset,
-    required this.predatorName,
+    required this.attackTitle,
     required this.effect,
     required this.guardLabel,
     required this.guardAsset,
@@ -952,7 +948,7 @@ class _AttackCard extends StatelessWidget {
   });
 
   final String predatorAsset;
-  final String predatorName;
+  final String attackTitle;
   final String effect;
   final String guardLabel;
   final String guardAsset;
@@ -993,7 +989,7 @@ class _AttackCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '$predatorName Attack',
+                      attackTitle,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: color,
@@ -1077,19 +1073,18 @@ class _WinConditionPageState extends State<_WinConditionPage>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return _TutorialPageLayout(
       icon: Icons.emoji_events,
-      title: 'How to Win',
-      description:
-          'Be the first player to collect at least one of EACH '
-          'farm animal. Dogs don\'t count toward winning.',
+      title: l10n.tutorialWinTitle,
+      description: l10n.tutorialWinDesc,
       illustration: Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
               Text(
-                'Collect one of each:',
+                l10n.collectOneOfEach,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -1151,7 +1146,7 @@ class _WinConditionPageState extends State<_WinConditionPage>
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        'First to complete the set wins!',
+                        l10n.firstToWin,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../l10n/app_localizations.dart';
 import '../widgets/farm_decorations.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -55,6 +56,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final bgColor =
         isDark ? const Color(0xFF1B5E20) : const Color(0xFF2E7D32);
@@ -141,7 +143,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Super Farmer',
+                      l10n?.appTitle ?? 'Super Farmer',
                       style: theme.textTheme.headlineLarge?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -150,7 +152,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Collect your animals!',
+                      l10n?.collectYourAnimals ?? 'Collect your animals!',
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: Colors.white70,
                       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../models/ai_difficulty.dart';
 import '../providers/settings_provider.dart';
 
@@ -34,6 +35,22 @@ class PlayerSetupCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final playerColor = availablePlayerColors[selectedColorIndex].color;
+    final l10n = AppLocalizations.of(context)!;
+
+    String aiDiffLabel(AiDifficulty diff) {
+      switch (diff) {
+        case AiDifficulty.easy: return l10n.aiEasy;
+        case AiDifficulty.medium: return l10n.aiMedium;
+        case AiDifficulty.hard: return l10n.aiHard;
+      }
+    }
+    String aiDiffDesc(AiDifficulty diff) {
+      switch (diff) {
+        case AiDifficulty.easy: return l10n.aiEasyDesc;
+        case AiDifficulty.medium: return l10n.aiMediumDesc;
+        case AiDifficulty.hard: return l10n.aiHardDesc;
+      }
+    }
 
     return Card(
       elevation: 2,
@@ -77,7 +94,7 @@ class PlayerSetupCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    isAi ? 'AI Player ${playerIndex + 1}' : 'Player ${playerIndex + 1}',
+                    isAi ? l10n.aiPlayerN(playerIndex + 1) : l10n.playerN(playerIndex + 1),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isDark
@@ -141,7 +158,7 @@ class PlayerSetupCard extends StatelessWidget {
                           child: Column(
                             children: [
                               Text(
-                                diff.label,
+                                aiDiffLabel(diff),
                                 style: theme.textTheme.labelMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: isSelected
@@ -151,7 +168,7 @@ class PlayerSetupCard extends StatelessWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                diff.description,
+                                aiDiffDesc(diff),
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   fontSize: 9,
                                   color: isSelected
@@ -179,11 +196,11 @@ class PlayerSetupCard extends StatelessWidget {
             TextField(
               onChanged: onNameChanged,
               decoration: InputDecoration(
-                hintText: 'Player ${playerIndex + 1}',
+                hintText: l10n.playerN(playerIndex + 1),
                 hintStyle: isDark
                     ? const TextStyle(color: Color(0xFF8A8A8A))
                     : null,
-                labelText: 'Name (optional)',
+                labelText: l10n.nameOptional,
                 labelStyle: isDark
                     ? TextStyle(color: Colors.grey[400])
                     : null,
@@ -203,7 +220,7 @@ class PlayerSetupCard extends StatelessWidget {
             const SizedBox(height: 12),
             // Color picker
             Text(
-              'Color',
+              l10n.color,
               style: theme.textTheme.labelMedium?.copyWith(
                 color: isDark
                     ? Colors.grey[400]

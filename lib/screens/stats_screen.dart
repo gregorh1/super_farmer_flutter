@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/l10n_helpers.dart';
 import '../models/achievement.dart';
 import '../models/game_record.dart';
 import '../providers/achievement_provider.dart';
@@ -10,6 +12,7 @@ class StatsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final records = ref.watch(statsProvider);
     final stats = ref.watch(gameStatsProvider);
 
@@ -19,33 +22,33 @@ class StatsScreen extends ConsumerWidget {
       length: 4,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Statistics'),
+          title: Text(l10n.statistics),
           centerTitle: true,
           actions: [
             if (records.isNotEmpty)
               IconButton(
                 icon: const Icon(Icons.delete_outline),
-                tooltip: 'Clear all stats',
+                tooltip: l10n.clearAllStats,
                 onPressed: () => _confirmClear(context, ref),
               ),
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.center,
             tabs: [
-              Tab(text: 'Overview'),
-              Tab(text: 'History'),
-              Tab(text: 'Leaderboard'),
-              Tab(text: 'Achievements'),
+              Tab(text: l10n.overview),
+              Tab(text: l10n.history),
+              Tab(text: l10n.leaderboard),
+              Tab(text: l10n.achievements),
             ],
           ),
         ),
         body: records.isEmpty
             ? TabBarView(
                 children: [
-                  const _EmptyState(),
-                  const _EmptyState(),
-                  const _EmptyState(),
+                  _EmptyState(),
+                  _EmptyState(),
+                  _EmptyState(),
                   _AchievementsTab(states: achievementStates),
                 ],
               )
@@ -62,23 +65,23 @@ class StatsScreen extends ConsumerWidget {
   }
 
   void _confirmClear(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Clear Statistics'),
-        content: const Text(
-            'This will permanently delete all game history. Continue?'),
+        title: Text(l10n.clearStatistics),
+        content: Text(l10n.clearStatisticsConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () {
               ref.read(statsProvider.notifier).clearAll();
               Navigator.pop(ctx);
             },
-            child: const Text('Clear'),
+            child: Text(l10n.clear),
           ),
         ],
       ),
@@ -91,6 +94,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     return Center(
       child: Padding(
@@ -103,14 +107,14 @@ class _EmptyState extends StatelessWidget {
                 color: theme.colorScheme.primary.withValues(alpha: 0.4)),
             const SizedBox(height: 16),
             Text(
-              'No games played yet',
+              l10n.noGamesYet,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Complete a game to see your statistics here.',
+              l10n.noGamesYetSubtitle,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
@@ -129,18 +133,19 @@ class _OverviewTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         // Games summary
-        _SectionHeader(title: 'Games Summary'),
+        _SectionHeader(title: l10n.gamesSummary),
         const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
               child: _StatCard(
-                label: 'Played',
+                label: l10n.played,
                 value: '${stats.gamesPlayed}',
                 icon: Icons.casino,
                 color: theme.colorScheme.primary,
@@ -149,7 +154,7 @@ class _OverviewTab extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: _StatCard(
-                label: 'Won',
+                label: l10n.won,
                 value: '${stats.gamesWon}',
                 icon: Icons.emoji_events,
                 color: Colors.amber.shade700,
@@ -158,7 +163,7 @@ class _OverviewTab extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: _StatCard(
-                label: 'Lost',
+                label: l10n.lost,
                 value: '${stats.gamesLost}',
                 icon: Icons.close,
                 color: Colors.red.shade400,
@@ -170,7 +175,7 @@ class _OverviewTab extends StatelessWidget {
 
         // Win rate by player count
         if (stats.winRateByPlayerCount.isNotEmpty) ...[
-          _SectionHeader(title: 'Win Rate by Player Count'),
+          _SectionHeader(title: l10n.winRateByPlayerCount),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -191,7 +196,7 @@ class _OverviewTab extends StatelessWidget {
         ],
 
         // Game length stats
-        _SectionHeader(title: 'Game Length'),
+        _SectionHeader(title: l10n.gameLength),
         const SizedBox(height: 8),
         Card(
           child: Padding(
@@ -200,7 +205,7 @@ class _OverviewTab extends StatelessWidget {
               children: [
                 Expanded(
                   child: _LabeledStat(
-                    label: 'Avg. Turns',
+                    label: l10n.avgTurns,
                     value: stats.averageTurns.toStringAsFixed(1),
                     icon: Icons.straighten,
                   ),
@@ -213,8 +218,8 @@ class _OverviewTab extends StatelessWidget {
                   ),
                   Expanded(
                     child: _LabeledStat(
-                      label: 'Fastest Win',
-                      value: '${stats.fastestWin} turns',
+                      label: l10n.fastestWin,
+                      value: l10n.nTurns(stats.fastestWin!),
                       icon: Icons.bolt,
                     ),
                   ),
@@ -227,12 +232,12 @@ class _OverviewTab extends StatelessWidget {
 
         // Strategy
         if (stats.mostCommonLastAnimal != null) ...[
-          _SectionHeader(title: 'Winning Strategy'),
+          _SectionHeader(title: l10n.winningStrategy),
           const SizedBox(height: 8),
           Card(
             child: ListTile(
               leading: Icon(Icons.pets, color: theme.colorScheme.primary),
-              title: const Text('Most common final animal'),
+              title: Text(l10n.mostCommonFinalAnimal),
               subtitle: Text(stats.mostCommonLastAnimal!),
             ),
           ),
@@ -248,6 +253,7 @@ class _HistoryTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final sorted = List<GameRecord>.from(records)
       ..sort((a, b) => b.date.compareTo(a.date));
@@ -265,7 +271,7 @@ class _HistoryTab extends StatelessWidget {
             leading: CircleAvatar(
               backgroundColor: theme.colorScheme.primaryContainer,
               child: Text(
-                '${r.playerCount}P',
+                l10n.nPlayersBadge(r.playerCount),
                 style: TextStyle(
                   color: theme.colorScheme.onPrimaryContainer,
                   fontWeight: FontWeight.bold,
@@ -288,7 +294,7 @@ class _HistoryTab extends StatelessWidget {
               ],
             ),
             subtitle: Text(
-              '${r.playerNames.join(", ")} \u2022 ${r.totalTurns} turns',
+              l10n.historySubtitle(r.playerNames.join(", "), r.totalTurns),
               overflow: TextOverflow.ellipsis,
             ),
             trailing: Text(
@@ -310,6 +316,7 @@ class _LeaderboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final entries = stats.leaderboard;
 
@@ -318,7 +325,7 @@ class _LeaderboardTab extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Text(
-            'Play with at least 2 named players to see leaderboard rankings.',
+            l10n.leaderboardMinPlayers,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
@@ -362,13 +369,13 @@ class _LeaderboardTab extends StatelessWidget {
               e.name,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            subtitle: Text('${e.gamesPlayed} games played'),
+            subtitle: Text(l10n.nGamesPlayed(e.gamesPlayed)),
             trailing: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${e.wins} wins',
+                  l10n.nWins(e.wins),
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.primary,
@@ -457,6 +464,7 @@ class _WinRateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final pct = (winRate * 100).round();
     return Card(
@@ -480,7 +488,7 @@ class _WinRateCard extends StatelessWidget {
               ),
             ),
             Text(
-              '$playerCount players',
+              l10n.nPlayers(playerCount),
               style: theme.textTheme.labelSmall,
             ),
           ],
@@ -530,6 +538,7 @@ class _AchievementsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final unlockedCount = states.where((s) => s.unlocked).length;
     final totalCount = AchievementDefinition.all.length;
@@ -548,13 +557,13 @@ class _AchievementsTab extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Achievements',
+                      l10n.achievements,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     Text(
-                      '$unlockedCount / $totalCount',
+                      l10n.nSlashTotal(unlockedCount, totalCount),
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.primary,
@@ -577,7 +586,7 @@ class _AchievementsTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '$unlockedCount of $totalCount unlocked',
+                  l10n.nOfTotalUnlocked(unlockedCount, totalCount),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
@@ -640,7 +649,7 @@ class _AchievementListTile extends StatelessWidget {
           ),
         ),
         title: Text(
-          definition.name,
+          localizedAchievementName(context, definition.id.name),
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: unlocked
@@ -652,7 +661,7 @@ class _AchievementListTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              definition.description,
+              localizedAchievementDesc(context, definition.id.name),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: unlocked
                     ? theme.colorScheme.onSurface.withValues(alpha: 0.8)
