@@ -12,7 +12,10 @@ import 'package:super_farmer/screens/game_screen.dart';
 import 'package:super_farmer/screens/splash_screen.dart';
 import 'package:super_farmer/theme.dart';
 import 'package:super_farmer/widgets/dice_center.dart';
+import 'package:super_farmer/providers/settings_provider.dart';
 import 'package:super_farmer/widgets/player_area.dart';
+import 'package:super_farmer/widgets/player_setup_card.dart';
+import 'package:super_farmer/widgets/settings_sheet.dart';
 
 /// A fixed Random that always returns a specific sequence index.
 class FixedRandom implements Random {
@@ -864,11 +867,11 @@ void main() {
 
     testWidgets('displays exchange rate numbers', (tester) async {
       await tester.pumpWidget(buildPlayerArea());
-      // Exchange rates: 6, 2, 3, 2
-      expect(find.text('6'), findsOneWidget);
-      expect(find.text('3'), findsOneWidget);
-      // '2' appears twice (lamb→pig and cow→horse exchange rates)
-      expect(find.text('2'), findsAtLeast(2));
+      // Exchange rates displayed as ratio: 6:1, 2:1, 3:1, 2:1
+      expect(find.text('6:1'), findsOneWidget);
+      expect(find.text('3:1'), findsOneWidget);
+      // '2:1' appears twice (lamb→pig and cow→horse exchange rates)
+      expect(find.text('2:1'), findsNWidgets(2));
     });
 
     testWidgets('displays animal counts', (tester) async {
@@ -890,8 +893,8 @@ void main() {
 
     testWidgets('shows dog buy buttons', (tester) async {
       await tester.pumpWidget(buildPlayerArea());
-      expect(find.text('Buy (1 Lamb)'), findsOneWidget);
-      expect(find.text('Buy (1 Cow)'), findsOneWidget);
+      expect(find.text('Buy with 1 Lamb'), findsOneWidget);
+      expect(find.text('Buy with 1 Cow'), findsOneWidget);
     });
 
     testWidgets('shows progress bar', (tester) async {
@@ -932,6 +935,7 @@ void main() {
     });
 
     testWidgets('player colors are distinct', (tester) async {
+      // Default player colors list still has 4 entries
       expect(PlayerArea.playerColors.length, 4);
       final colorSet = PlayerArea.playerColors.toSet();
       expect(colorSet.length, 4);
@@ -1053,6 +1057,17 @@ void main() {
       );
     }
 
+    /// Helper to scroll to and tap the Start Game button.
+    Future<void> tapStartGame(WidgetTester tester) async {
+      await tester.scrollUntilVisible(
+        find.text('Start Game'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Start Game'));
+      await tester.pumpAndSettle();
+    }
+
     testWidgets('shows setup screen when game not started', (tester) async {
       await tester.pumpWidget(buildGameScreen());
       expect(find.text('Super Farmer'), findsOneWidget);
@@ -1062,89 +1077,80 @@ void main() {
     testWidgets('setup screen has player count selector', (tester) async {
       await tester.pumpWidget(buildGameScreen());
       expect(find.text('Number of Players'), findsOneWidget);
-      // SegmentedButton segments for 2, 3, 4
-      expect(find.byType(SegmentedButton<int>), findsOneWidget);
+      // Player count options 2, 3, 4 appear in selector (and also in card circle avatars)
+      expect(find.text('2'), findsAtLeast(1));
+      expect(find.text('3'), findsAtLeast(1));
+      expect(find.text('4'), findsAtLeast(1));
     });
 
-    testWidgets('shows player count options 2, 3, 4', (tester) async {
+    testWidgets('setup screen shows player setup cards', (tester) async {
       await tester.pumpWidget(buildGameScreen());
-      // The SegmentedButton should have options for 2, 3, 4
-      expect(find.text('2'), findsOneWidget);
-      expect(find.text('3'), findsOneWidget);
-      expect(find.text('4'), findsOneWidget);
+      // Default 4 players, should show 4 player setup cards
+      expect(find.text('Player 1'), findsAtLeast(1));
+      expect(find.text('Player 2'), findsAtLeast(1));
+      expect(find.text('Player 3'), findsAtLeast(1));
+      expect(find.text('Player 4'), findsAtLeast(1));
+    });
+
+    testWidgets('setup screen has name input fields', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+      // 4 player name input fields
+      expect(find.byType(TextField), findsNWidgets(4));
     });
 
     testWidgets('starts game with selected player count', (tester) async {
       await tester.pumpWidget(buildGameScreen());
+      await tapStartGame(tester);
 
-      // Default is 4 players, tap Start Game
-      await tester.tap(find.text('Start Game'));
-      await tester.pumpAndSettle();
-
-      // Should show board with player areas
-      expect(find.text('Player 1'), findsOneWidget);
-      expect(find.text('Player 2'), findsOneWidget);
-      expect(find.text('Player 3'), findsOneWidget);
-      expect(find.text('Player 4'), findsOneWidget);
+      // Should show board with player names (active player may appear multiple times)
+      expect(find.text('Player 1'), findsAtLeast(1));
+      expect(find.text('Player 2'), findsAtLeast(1));
+      expect(find.text('Player 3'), findsAtLeast(1));
+      expect(find.text('Player 4'), findsAtLeast(1));
     });
 
     testWidgets('board shows Roll Dice button', (tester) async {
       await tester.pumpWidget(buildGameScreen());
-      await tester.tap(find.text('Start Game'));
-      await tester.pumpAndSettle();
+      await tapStartGame(tester);
 
       expect(find.text('Roll Dice'), findsOneWidget);
     });
 
     testWidgets('board shows End Turn button', (tester) async {
       await tester.pumpWidget(buildGameScreen());
-      await tester.tap(find.text('Start Game'));
-      await tester.pumpAndSettle();
+      await tapStartGame(tester);
 
       expect(find.text('End Turn'), findsOneWidget);
     });
 
     testWidgets('board shows current player indicator', (tester) async {
       await tester.pumpWidget(buildGameScreen());
-      await tester.tap(find.text('Start Game'));
-      await tester.pumpAndSettle();
+      await tapStartGame(tester);
 
       expect(find.text("Player 1's Turn"), findsOneWidget);
     });
 
-    testWidgets('has reset button in app bar', (tester) async {
+    testWidgets('has reset and settings buttons in app bar', (tester) async {
       await tester.pumpWidget(buildGameScreen());
-      await tester.tap(find.text('Start Game'));
-      await tester.pumpAndSettle();
+      await tapStartGame(tester);
 
       expect(find.byIcon(Icons.restart_alt), findsOneWidget);
+      expect(find.byIcon(Icons.settings), findsOneWidget);
     });
 
-    testWidgets('board uses RotatedBox for player layout', (tester) async {
+    testWidgets('shows active player area and compact strips', (tester) async {
       await tester.pumpWidget(buildGameScreen());
-      await tester.tap(find.text('Start Game'));
-      await tester.pumpAndSettle();
+      await tapStartGame(tester);
 
-      // With 4 players: Player 3 (180°), Player 4 (90°), Player 2 (-90°/270°)
-      final rotatedBoxes = tester.widgetList<RotatedBox>(find.byType(RotatedBox));
-      expect(rotatedBoxes.length, 3); // 3 rotated players
-
-      final turns = rotatedBoxes.map((r) => r.quarterTurns).toSet();
-      expect(turns, containsAll([1, 2, 3]));
-    });
-
-    testWidgets('shows 4 PlayerArea widgets for 4-player game', (tester) async {
-      await tester.pumpWidget(buildGameScreen());
-      await tester.tap(find.text('Start Game'));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(PlayerArea), findsNWidgets(4));
+      // 1 active PlayerArea widget for current player
+      expect(find.byType(PlayerArea), findsOneWidget);
+      // DiceCenter in the middle
+      expect(find.byType(DiceCenter), findsOneWidget);
     });
 
     testWidgets('shows DiceCenter widget', (tester) async {
       await tester.pumpWidget(buildGameScreen());
-      await tester.tap(find.text('Start Game'));
-      await tester.pumpAndSettle();
+      await tapStartGame(tester);
 
       expect(find.byType(DiceCenter), findsOneWidget);
     });
@@ -1152,56 +1158,75 @@ void main() {
     testWidgets('can start a 2-player game', (tester) async {
       await tester.pumpWidget(buildGameScreen());
 
-      // Select 2 players
-      await tester.tap(find.text('2'));
+      // Select 2 players - tap inside the '2' count selector
+      await tester.tap(find.text('2').first);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Start Game'));
-      await tester.pumpAndSettle();
+      await tapStartGame(tester);
 
-      // Should show 2 player areas
-      expect(find.byType(PlayerArea), findsNWidgets(2));
-      expect(find.text('Player 1'), findsOneWidget);
-      expect(find.text('Player 2'), findsOneWidget);
+      // Should show active player area + compact strip for other player
+      expect(find.byType(PlayerArea), findsOneWidget);
+      expect(find.text('Player 1'), findsAtLeast(1));
+      expect(find.text('Player 2'), findsAtLeast(1));
     });
 
     testWidgets('reset button returns to setup screen', (tester) async {
       await tester.pumpWidget(buildGameScreen());
-      await tester.tap(find.text('Start Game'));
-      await tester.pumpAndSettle();
+      await tapStartGame(tester);
 
       await tester.tap(find.byIcon(Icons.restart_alt));
       await tester.pumpAndSettle();
 
+      // Scroll to find Start Game button
+      await tester.scrollUntilVisible(
+        find.text('Start Game'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Start Game'), findsOneWidget);
     });
 
-    testWidgets('shows progress bars for all players', (tester) async {
+    testWidgets('active player shows progress bar', (tester) async {
       await tester.pumpWidget(buildGameScreen());
-      await tester.tap(find.text('Start Game'));
-      await tester.pumpAndSettle();
+      await tapStartGame(tester);
 
-      // 4 players = 4 progress bars
-      expect(find.byType(LinearProgressIndicator), findsNWidgets(4));
+      // Active player area has a progress bar
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
     });
 
-    testWidgets('all players start at 0% progress', (tester) async {
+    testWidgets('active player starts at 0% progress', (tester) async {
       await tester.pumpWidget(buildGameScreen());
-      await tester.tap(find.text('Start Game'));
-      await tester.pumpAndSettle();
+      await tapStartGame(tester);
 
-      // All players should show 0%
+      // Active player and compact strips all show 0%
       expect(find.text('0%'), findsNWidgets(4));
     });
 
-    testWidgets('shows player color chips in setup', (tester) async {
+    testWidgets('settings gear opens settings sheet', (tester) async {
       await tester.pumpWidget(buildGameScreen());
-      // Default 4 players selected, should show 4 color chips
-      expect(find.byType(Chip), findsNWidgets(4));
-      expect(find.text('P1'), findsOneWidget);
-      expect(find.text('P2'), findsOneWidget);
-      expect(find.text('P3'), findsOneWidget);
-      expect(find.text('P4'), findsOneWidget);
+      await tapStartGame(tester);
+
+      await tester.tap(find.byIcon(Icons.settings));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Settings'), findsOneWidget);
+      expect(find.text('Sound'), findsOneWidget);
+      expect(find.text('Animation Speed'), findsOneWidget);
+      expect(find.text('Confirm End Turn'), findsOneWidget);
+    });
+
+    testWidgets('player count change updates setup cards', (tester) async {
+      await tester.pumpWidget(buildGameScreen());
+
+      // Default 4 players = 4 text fields
+      expect(find.byType(TextField), findsNWidgets(4));
+
+      // Tap 2 to select 2 players (use .first since '2' appears in card avatar too)
+      await tester.tap(find.text('2').first);
+      await tester.pumpAndSettle();
+
+      // Now only 2 text fields
+      expect(find.byType(TextField), findsNWidgets(2));
     });
   });
 
@@ -1272,10 +1297,211 @@ void main() {
     });
   });
 
+  // Settings and player setup tests
+  _settingsProviderTests();
+  _playerSetupTests();
+  _playerHerdColorTests();
+
   // Animation and TurnEvent tests
   _turnEventTests();
   _diceAnimationTests();
   _playerAreaAnimationTests();
+}
+
+// =============================================================================
+// Settings provider tests
+// =============================================================================
+
+void _settingsProviderTests() {
+  group('GameSettings', () {
+    test('default settings', () {
+      const settings = GameSettings();
+      expect(settings.soundEnabled, true);
+      expect(settings.animationSpeed, AnimationSpeed.normal);
+      expect(settings.confirmEndTurn, false);
+    });
+
+    test('copyWith preserves unchanged values', () {
+      const settings = GameSettings();
+      final updated = settings.copyWith(soundEnabled: false);
+      expect(updated.soundEnabled, false);
+      expect(updated.animationSpeed, AnimationSpeed.normal);
+      expect(updated.confirmEndTurn, false);
+    });
+
+    test('animation speed multipliers', () {
+      expect(AnimationSpeed.slow.multiplier, 1.5);
+      expect(AnimationSpeed.normal.multiplier, 1.0);
+      expect(AnimationSpeed.fast.multiplier, 0.5);
+    });
+
+    test('animation speed labels', () {
+      expect(AnimationSpeed.slow.label, 'Slow');
+      expect(AnimationSpeed.normal.label, 'Normal');
+      expect(AnimationSpeed.fast.label, 'Fast');
+    });
+  });
+
+  group('GameSettingsNotifier', () {
+    test('toggle sound', () {
+      final notifier = GameSettingsNotifier();
+      expect(notifier.state.soundEnabled, true);
+      notifier.toggleSound();
+      expect(notifier.state.soundEnabled, false);
+      notifier.toggleSound();
+      expect(notifier.state.soundEnabled, true);
+    });
+
+    test('set animation speed', () {
+      final notifier = GameSettingsNotifier();
+      notifier.setAnimationSpeed(AnimationSpeed.fast);
+      expect(notifier.state.animationSpeed, AnimationSpeed.fast);
+    });
+
+    test('toggle confirm end turn', () {
+      final notifier = GameSettingsNotifier();
+      expect(notifier.state.confirmEndTurn, false);
+      notifier.toggleConfirmEndTurn();
+      expect(notifier.state.confirmEndTurn, true);
+    });
+  });
+}
+
+// =============================================================================
+// Player setup tests
+// =============================================================================
+
+void _playerSetupTests() {
+  group('PlayerSetup', () {
+    test('default values', () {
+      const setup = PlayerSetup();
+      expect(setup.playerCount, 4);
+      expect(setup.playerNames.length, 4);
+      expect(setup.playerColorIndices, [0, 1, 2, 3]);
+    });
+
+    test('displayName returns default when name is empty', () {
+      const setup = PlayerSetup();
+      expect(setup.displayName(0), 'Player 1');
+      expect(setup.displayName(3), 'Player 4');
+    });
+
+    test('displayName returns custom name when set', () {
+      const setup = PlayerSetup(playerNames: ['Alice', '', 'Bob', '']);
+      expect(setup.displayName(0), 'Alice');
+      expect(setup.displayName(1), 'Player 2');
+      expect(setup.displayName(2), 'Bob');
+    });
+
+    test('playerColor returns correct color', () {
+      const setup = PlayerSetup();
+      expect(setup.playerColor(0), availablePlayerColors[0].color);
+      expect(setup.playerColor(1), availablePlayerColors[1].color);
+    });
+  });
+
+  group('PlayerSetupNotifier', () {
+    test('set player count', () {
+      final notifier = PlayerSetupNotifier();
+      notifier.setPlayerCount(2);
+      expect(notifier.state.playerCount, 2);
+    });
+
+    test('set player name', () {
+      final notifier = PlayerSetupNotifier();
+      notifier.setPlayerName(0, 'Alice');
+      expect(notifier.state.playerNames[0], 'Alice');
+    });
+
+    test('set player color swaps with existing', () {
+      final notifier = PlayerSetupNotifier();
+      // Player 0 has color 0, Player 1 has color 1
+      // Set player 0 to color 1 → swap: player 0 gets 1, player 1 gets 0
+      notifier.setPlayerColor(0, 1);
+      expect(notifier.state.playerColorIndices[0], 1);
+      expect(notifier.state.playerColorIndices[1], 0);
+    });
+
+    test('reset returns to defaults', () {
+      final notifier = PlayerSetupNotifier();
+      notifier.setPlayerCount(2);
+      notifier.setPlayerName(0, 'Alice');
+      notifier.reset();
+      expect(notifier.state.playerCount, 4);
+      expect(notifier.state.playerNames[0], '');
+    });
+  });
+
+  group('availablePlayerColors', () {
+    test('has at least 6 colors', () {
+      expect(availablePlayerColors.length, greaterThanOrEqualTo(6));
+    });
+
+    test('all colors are distinct', () {
+      final colorValues =
+          availablePlayerColors.map((c) => c.color.value).toSet();
+      expect(colorValues.length, availablePlayerColors.length);
+    });
+
+    test('each color has a name', () {
+      for (final c in availablePlayerColors) {
+        expect(c.name.isNotEmpty, true);
+      }
+    });
+  });
+}
+
+// =============================================================================
+// PlayerHerd color tests
+// =============================================================================
+
+void _playerHerdColorTests() {
+  group('PlayerHerd color', () {
+    test('default color is green', () {
+      const herd = PlayerHerd(name: 'Test');
+      expect(herd.color, const Color(0xFF2E7D32));
+    });
+
+    test('custom color is preserved', () {
+      const herd = PlayerHerd(
+        name: 'Test',
+        color: Color(0xFF1565C0),
+      );
+      expect(herd.color, const Color(0xFF1565C0));
+    });
+
+    test('copyWith preserves color', () {
+      const herd = PlayerHerd(
+        name: 'Test',
+        color: Color(0xFF1565C0),
+      );
+      final updated = herd.copyWith(name: 'Updated');
+      expect(updated.color, const Color(0xFF1565C0));
+    });
+
+    test('copyWith can change color', () {
+      const herd = PlayerHerd(name: 'Test');
+      final updated = herd.copyWith(color: const Color(0xFFE65100));
+      expect(updated.color, const Color(0xFFE65100));
+    });
+
+    test('startGame passes colors to players', () {
+      final notifier = GameNotifier();
+      notifier.startGame(
+        ['Alice', 'Bob'],
+        [const Color(0xFF1565C0), const Color(0xFFE65100)],
+      );
+      expect(notifier.state.players[0].color, const Color(0xFF1565C0));
+      expect(notifier.state.players[1].color, const Color(0xFFE65100));
+    });
+
+    test('startGame uses default color when no colors provided', () {
+      final notifier = GameNotifier();
+      notifier.startGame(['Alice', 'Bob']);
+      expect(notifier.state.players[0].color, const Color(0xFF2E7D32));
+      expect(notifier.state.players[1].color, const Color(0xFF2E7D32));
+    });
+  });
 }
 
 // Test helpers
@@ -1467,9 +1693,9 @@ void _diceAnimationTests() {
         lastRoll: const DiceRollResult(green: DiceFace.rabbit, red: DiceFace.lamb),
       );
       await tester.pumpWidget(buildDiceCenter(gameState: state));
-      // Results should be displayed (reveal animation starts completed for pre-existing rolls)
-      expect(find.text('Green'), findsOneWidget);
-      expect(find.text('Red'), findsOneWidget);
+      // Results should show the face names (reveal animation starts completed for pre-existing rolls)
+      expect(find.text('Rabbit'), findsOneWidget);
+      expect(find.text('Lamb'), findsOneWidget);
     });
 
     testWidgets('end turn button enabled after roll', (tester) async {

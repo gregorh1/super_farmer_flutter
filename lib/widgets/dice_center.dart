@@ -145,9 +145,8 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final playerColor = PlayerArea.playerColors[
-        widget.gameState.currentPlayerIndex % PlayerArea.playerColors.length];
     final currentPlayer = widget.gameState.currentPlayer!;
+    final playerColor = currentPlayer.color;
 
     return Card(
       elevation: 4,
