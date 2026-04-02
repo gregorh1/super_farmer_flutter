@@ -4,9 +4,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../models/animal.dart';
 import '../models/exchange.dart';
 import '../providers/game_provider.dart';
+import '../providers/settings_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/dice_center.dart';
 import '../widgets/player_area.dart';
+import '../widgets/player_setup_card.dart';
+import '../widgets/settings_sheet.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
@@ -15,8 +18,52 @@ class GameScreen extends ConsumerStatefulWidget {
   ConsumerState<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends ConsumerState<GameScreen> {
-  int _playerCount = 4;
+class _GameScreenState extends ConsumerState<GameScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _transitionController;
+  late final Animation<double> _fadeAnimation;
+  late final Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _transitionController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _transitionController,
+      curve: Curves.easeInOut,
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.05),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _transitionController,
+      curve: Curves.easeOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _transitionController.dispose();
+    super.dispose();
+  }
+
+  void _startGame() {
+    final setup = ref.read(playerSetupProvider);
+    final names = List.generate(
+      setup.playerCount,
+      (i) => setup.displayName(i),
+    );
+    final colors = List.generate(
+      setup.playerCount,
+      (i) => setup.playerColor(i),
+    );
+
+    ref.read(gameProvider.notifier).startGame(names, colors);
+    _transitionController.forward(from: 0.0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,115 +81,142 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       return _buildSetupScreen(context);
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Super Farmer'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.restart_alt),
-            onPressed: () => ref.read(gameProvider.notifier).resetGame(),
-            tooltip: 'Reset Game',
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Super Farmer'),
+            centerTitle: true,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () => SettingsSheet.show(context),
+                tooltip: 'Settings',
+              ),
+              IconButton(
+                icon: const Icon(Icons.restart_alt),
+                onPressed: () {
+                  ref.read(gameProvider.notifier).resetGame();
+                  _transitionController.forward(from: 0.0);
+                },
+                tooltip: 'New Game',
+              ),
+            ],
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: _buildBoard(context, game),
+          body: SafeArea(
+            child: _buildBoard(context, game),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildSetupScreen(BuildContext context) {
     final theme = Theme.of(context);
+    final setup = ref.watch(playerSetupProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('New Game')),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.groups,
-                size: 64,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+        child: Column(
+          children: [
+            // Header
+            Icon(
+              Icons.agriculture,
+              size: 56,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Super Farmer',
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
                 color: theme.colorScheme.primary,
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Super Farmer',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Collect one of each animal to win!',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.brightness == Brightness.dark
+                    ? Colors.grey[300]
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Collect one of each animal to win!',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
+            ),
+            const SizedBox(height: 28),
+
+            // Player count selector
+            Text(
+              'Number of Players',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(height: 32),
-              Text(
-                'Number of Players',
-                style: theme.textTheme.titleSmall,
-              ),
-              const SizedBox(height: 12),
-              SegmentedButton<int>(
-                segments: List.generate(
-                  AppConstants.maxPlayers - AppConstants.minPlayers + 1,
-                  (i) {
-                    final count = AppConstants.minPlayers + i;
-                    return ButtonSegment(
-                      value: count,
-                      label: Text('$count'),
-                      icon: const Icon(Icons.person, size: 16),
-                    );
-                  },
-                ),
-                selected: {_playerCount},
-                onSelectionChanged: (selected) {
-                  setState(() => _playerCount = selected.first);
-                },
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_playerCount, (i) {
-                  final color = PlayerArea.playerColors[i];
+            ),
+            const SizedBox(height: 12),
+            _PlayerCountSelector(
+              count: setup.playerCount,
+              onChanged: (count) {
+                ref.read(playerSetupProvider.notifier).setPlayerCount(count);
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // Player cards
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: Column(
+                key: ValueKey(setup.playerCount),
+                children: List.generate(setup.playerCount, (i) {
+                  final usedColors = <int>{};
+                  for (int j = 0; j < setup.playerCount; j++) {
+                    if (j != i) usedColors.add(setup.playerColorIndices[j]);
+                  }
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Chip(
-                      avatar: CircleAvatar(
-                        backgroundColor: color,
-                        radius: 8,
-                      ),
-                      label: Text('P${i + 1}'),
-                      visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: PlayerSetupCard(
+                      playerIndex: i,
+                      name: setup.playerNames[i],
+                      selectedColorIndex: setup.playerColorIndices[i],
+                      usedColorIndices: usedColors,
+                      onNameChanged: (name) {
+                        ref
+                            .read(playerSetupProvider.notifier)
+                            .setPlayerName(i, name);
+                      },
+                      onColorChanged: (colorIndex) {
+                        ref
+                            .read(playerSetupProvider.notifier)
+                            .setPlayerColor(i, colorIndex);
+                      },
                     ),
                   );
                 }),
               ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: () {
-                  final names = List.generate(
-                    _playerCount,
-                    (i) => 'Player ${i + 1}',
-                  );
-                  ref.read(gameProvider.notifier).startGame(names);
-                },
-                icon: const Icon(Icons.play_arrow),
-                label: const Text('Start Game'),
+            ),
+            const SizedBox(height: 8),
+
+            // Start button
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: FilledButton.icon(
+                onPressed: _startGame,
+                icon: const Icon(Icons.play_arrow, size: 28),
+                label: const Text(
+                  'Start Game',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 16,
-                    horizontal: 32,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -246,6 +320,99 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 }
 
+/// Card-style player count selector.
+class _PlayerCountSelector extends StatelessWidget {
+  const _PlayerCountSelector({
+    required this.count,
+    required this.onChanged,
+  });
+
+  final int count;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: List.generate(
+        AppConstants.maxPlayers - AppConstants.minPlayers + 1,
+        (i) {
+          final value = AppConstants.minPlayers + i;
+          final isSelected = value == count;
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: GestureDetector(
+                onTap: () => onChanged(value),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.outline.withValues(alpha: 0.3),
+                      width: isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          value,
+                          (_) => Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 2),
+                            child: Icon(
+                              Icons.person,
+                              size: 18,
+                              color: isSelected
+                                  ? Colors.white
+                                  : theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$value',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: isSelected
+                              ? Colors.white
+                              : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 /// Compact strip showing a non-active player's summary.
 /// Tapping opens a detail popup.
 class _CompactPlayerStrip extends StatelessWidget {
@@ -271,8 +438,7 @@ class _CompactPlayerStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        PlayerArea.playerColors[playerIndex % PlayerArea.playerColors.length];
+    final color = player.color;
     final theme = Theme.of(context);
     final progressPercent = (_winProgress * 100).round();
 
@@ -348,8 +514,7 @@ class _CompactPlayerStrip extends StatelessWidget {
       ),
       builder: (ctx) {
         final theme = Theme.of(ctx);
-        final color = PlayerArea
-            .playerColors[playerIndex % PlayerArea.playerColors.length];
+        final color = player.color;
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           child: Column(

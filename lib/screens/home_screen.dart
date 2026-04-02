@@ -41,7 +41,11 @@ class HomeScreen extends StatelessWidget {
                     Text(
                       'Collect one of each animal to win!\nWatch out for the fox and wolf!',
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyLarge,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[300]
+                            : null,
+                      ),
                     ),
                   ],
                 ),
@@ -68,6 +72,7 @@ class HomeScreen extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
+              alignment: WrapAlignment.center,
               children: Animal.values
                   .map((a) => AnimalCard(
                         animal: a,

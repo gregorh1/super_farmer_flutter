@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/animal.dart';
 import '../models/dice.dart';
@@ -30,15 +31,18 @@ class PlayerHerd {
   const PlayerHerd({
     this.animals = const {},
     this.name = '',
+    this.color = const Color(0xFF2E7D32),
   });
 
   final Map<Animal, int> animals;
   final String name;
+  final Color color;
 
-  PlayerHerd copyWith({Map<Animal, int>? animals, String? name}) {
+  PlayerHerd copyWith({Map<Animal, int>? animals, String? name, Color? color}) {
     return PlayerHerd(
       animals: animals ?? this.animals,
       name: name ?? this.name,
+      color: color ?? this.color,
     );
   }
 
@@ -110,14 +114,17 @@ class GameNotifier extends StateNotifier<GameState> {
 
   final Random? _random;
 
-  void startGame(List<String> playerNames) {
+  void startGame(List<String> playerNames, [List<Color>? playerColors]) {
     state = GameState(
-      players: playerNames
-          .map((name) => PlayerHerd(
-                name: name,
-                animals: {for (final a in Animal.values) a: 0},
-              ))
-          .toList(),
+      players: List.generate(playerNames.length, (i) {
+        return PlayerHerd(
+          name: playerNames[i],
+          color: playerColors != null && i < playerColors.length
+              ? playerColors[i]
+              : const Color(0xFF2E7D32),
+          animals: {for (final a in Animal.values) a: 0},
+        );
+      }),
       currentPlayerIndex: 0,
       isStarted: true,
       bank: GameState.initialBank(),

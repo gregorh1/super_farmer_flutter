@@ -163,8 +163,7 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        PlayerArea.playerColors[widget.playerIndex % PlayerArea.playerColors.length];
+    final color = widget.player.color;
     final theme = Theme.of(context);
 
     return AnimatedBuilder(
