@@ -77,10 +77,14 @@ class SuperFarmerTheme {
         ),
         cardTheme: CardThemeData(
           elevation: 1,
-          color: _nightCard,
+          color: const Color(0xFF253025),
           surfaceTintColor: _nightGreenLight.withValues(alpha: 0.05),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: Colors.white.withValues(alpha: 0.08),
+              width: 1,
+            ),
           ),
         ),
         floatingActionButtonTheme: FloatingActionButtonThemeData(

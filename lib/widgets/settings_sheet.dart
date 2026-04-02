@@ -207,7 +207,7 @@ class _SettingsTile extends StatelessWidget {
         children: [
           Icon(icon, size: 24, color: theme.colorScheme.primary),
           const SizedBox(width: 12),
-          Expanded(
+          Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -216,6 +216,8 @@ class _SettingsTile extends StatelessWidget {
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   subtitle,
@@ -227,6 +229,7 @@ class _SettingsTile extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 8),
           trailing,
         ],
       ),

@@ -80,7 +80,9 @@ class PlayerSetupCard extends StatelessWidget {
                     isAi ? 'AI Player ${playerIndex + 1}' : 'Player ${playerIndex + 1}',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: playerColor,
+                      color: isDark
+                          ? const Color(0xFFC8C4BC)
+                          : playerColor,
                     ),
                   ),
                 ),
@@ -179,7 +181,7 @@ class PlayerSetupCard extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: 'Player ${playerIndex + 1}',
                 hintStyle: isDark
-                    ? TextStyle(color: Colors.grey[500])
+                    ? const TextStyle(color: Color(0xFF8A8A8A))
                     : null,
                 labelText: 'Name (optional)',
                 labelStyle: isDark
