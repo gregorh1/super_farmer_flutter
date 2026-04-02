@@ -85,10 +85,17 @@ class _ProgressHeader extends StatelessWidget {
                   value: progress,
                   minHeight: 10,
                   backgroundColor:
-                      theme.colorScheme.primary.withValues(alpha: 0.12),
+                      theme.colorScheme.primary.withValues(alpha: 0.2),
                   valueColor: AlwaysStoppedAnimation<Color>(
                     theme.colorScheme.primary,
                   ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '$unlockedCount of $totalCount unlocked',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ],
@@ -113,6 +120,7 @@ class _AchievementTile extends StatelessWidget {
     final theme = Theme.of(context);
     final unlocked = state.unlocked;
     final hasProgress = definition.targetProgress != null;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -132,10 +140,12 @@ class _AchievementTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                unlocked ? definition.icon : Icons.lock,
+                definition.icon,
                 color: unlocked
                     ? Colors.amber.shade700
-                    : theme.colorScheme.outline.withValues(alpha: 0.4),
+                    : isDark
+                        ? const Color(0xFF9E9E9E)
+                        : theme.colorScheme.outline.withValues(alpha: 0.4),
                 size: 24,
               ),
             ),
@@ -152,15 +162,19 @@ class _AchievementTile extends StatelessWidget {
                       color: unlocked
                           ? null
                           : theme.colorScheme.onSurface
-                              .withValues(alpha: 0.5),
+                              .withValues(alpha: 0.6),
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     definition.description,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface
-                          .withValues(alpha: unlocked ? 0.7 : 0.4),
+                      color: unlocked
+                          ? theme.colorScheme.onSurface.withValues(alpha: 0.8)
+                          : isDark
+                              ? const Color(0xFFB0B0B0)
+                              : theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.6),
                     ),
                   ),
                   if (hasProgress && !unlocked) ...[
@@ -174,8 +188,10 @@ class _AchievementTile extends StatelessWidget {
                               value: state.progress /
                                   definition.targetProgress!,
                               minHeight: 6,
-                              backgroundColor: theme.colorScheme.outline
-                                  .withValues(alpha: 0.15),
+                              backgroundColor: isDark
+                                  ? Colors.white.withValues(alpha: 0.15)
+                                  : theme.colorScheme.outline
+                                      .withValues(alpha: 0.15),
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 theme.colorScheme.primary
                                     .withValues(alpha: 0.6),
@@ -188,7 +204,7 @@ class _AchievementTile extends StatelessWidget {
                           '${state.progress}/${definition.targetProgress}',
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.5),
+                                .withValues(alpha: 0.6),
                             fontWeight: FontWeight.bold,
                           ),
                         ),

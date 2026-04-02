@@ -45,7 +45,7 @@ class AchievementDefinition {
       id: AchievementId.speedFarmer,
       name: 'Speed Farmer',
       description: 'Win in under 15 turns',
-      icon: Icons.bolt,
+      icon: Icons.timer,
     ),
     AchievementDefinition(
       id: AchievementId.horseWhisperer,
@@ -69,7 +69,7 @@ class AchievementDefinition {
       id: AchievementId.foxOutsmarted,
       name: 'Fox Outsmarted',
       description: 'Block 5 fox attacks total (across games)',
-      icon: Icons.security,
+      icon: Icons.psychology,
       targetProgress: 5,
     ),
     AchievementDefinition(
@@ -82,7 +82,7 @@ class AchievementDefinition {
       id: AchievementId.underdog,
       name: 'Underdog',
       description: 'Win from behind (lowest % at turn 20+)',
-      icon: Icons.trending_up,
+      icon: Icons.collections,
     ),
     AchievementDefinition(
       id: AchievementId.farmerPro,

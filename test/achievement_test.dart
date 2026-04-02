@@ -423,7 +423,7 @@ void main() {
       expect(find.text('Win your first game'), findsOneWidget);
     });
 
-    testWidgets('shows lock icons for visible locked achievements',
+    testWidgets('shows unique icons for visible locked achievements',
         (tester) async {
       await tester.pumpWidget(
         const ProviderScope(
@@ -434,8 +434,23 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Should have lock icons for visible achievements
-      expect(find.byIcon(Icons.lock), findsWidgets);
+      // Should show unique achievement icons (not generic lock)
+      expect(find.byIcon(Icons.lock), findsNothing);
+      expect(find.byIcon(Icons.emoji_events), findsOneWidget);
+      expect(find.byIcon(Icons.timer), findsOneWidget);
+    });
+
+    testWidgets('shows unlocked count text', (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: AchievementsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('0 of 10 unlocked'), findsOneWidget);
     });
 
     testWidgets('can scroll to see more achievements', (tester) async {
