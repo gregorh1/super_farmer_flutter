@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <!-- Woolly body -->
+  <circle cx="50" cy="55" r="20" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <circle cx="38" cy="48" r="8" fill="white"/>
+  <circle cx="62" cy="48" r="8" fill="white"/>
+  <circle cx="38" cy="62" r="8" fill="white"/>
+  <circle cx="62" cy="62" r="8" fill="white"/>
+  <circle cx="50" cy="44" r="8" fill="white"/>
+  <circle cx="50" cy="66" r="8" fill="white"/>
+  <!-- Head -->
+  <ellipse cx="50" cy="30" rx="10" ry="11" fill="#E0E0E0"/>
+  <!-- Ears -->
+  <ellipse cx="38" cy="28" rx="5" ry="3" fill="#E0E0E0"/>
+  <ellipse cx="62" cy="28" rx="5" ry="3" fill="#E0E0E0"/>
+  <!-- Eyes -->
+  <circle cx="46" cy="28" r="2" fill="#333"/>
+  <circle cx="54" cy="28" r="2" fill="#333"/>
+  <!-- Nose -->
+  <ellipse cx="50" cy="34" rx="2" ry="1.5" fill="#333"/>
+  <!-- Legs -->
+  <rect x="38" y="72" width="5" height="14" rx="2" fill="#333"/>
+  <rect x="57" y="72" width="5" height="14" rx="2" fill="#333"/>
+  <!-- Hooves -->
+  <rect x="37" y="84" width="7" height="3" rx="1" fill="#555"/>
+  <rect x="56" y="84" width="7" height="3" rx="1" fill="#555"/>
+</svg>

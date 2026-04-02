@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <!-- Body -->
+  <ellipse cx="50" cy="55" rx="24" ry="16" fill="#F44336"/>
+  <!-- Belly -->
+  <ellipse cx="50" cy="60" rx="14" ry="10" fill="#FFCCBC"/>
+  <!-- Head -->
+  <circle cx="50" cy="32" r="15" fill="#F44336"/>
+  <!-- Ears (large, pointy) -->
+  <polygon points="36,22 30,4 44,18" fill="#F44336"/>
+  <polygon points="36,22 32,8 42,18" fill="#FFCCBC"/>
+  <polygon points="64,22 70,4 56,18" fill="#F44336"/>
+  <polygon points="64,22 68,8 58,18" fill="#FFCCBC"/>
+  <!-- Face mask -->
+  <path d="M38 32 Q50 42 62 32 Q56 36 50 38 Q44 36 38 32Z" fill="white"/>
+  <!-- Eyes (sly) -->
+  <ellipse cx="42" cy="30" rx="3" ry="2.5" fill="#FFC107"/>
+  <ellipse cx="42" cy="30" rx="1.5" ry="2" fill="#333"/>
+  <ellipse cx="58" cy="30" rx="3" ry="2.5" fill="#FFC107"/>
+  <ellipse cx="58" cy="30" rx="1.5" ry="2" fill="#333"/>
+  <!-- Nose -->
+  <ellipse cx="50" cy="36" rx="3" ry="2" fill="#333"/>
+  <!-- Legs -->
+  <rect x="32" y="68" width="6" height="16" rx="2" fill="#D32F2F"/>
+  <rect x="62" y="68" width="6" height="16" rx="2" fill="#D32F2F"/>
+  <rect x="42" y="70" width="5" height="14" rx="2" fill="#333"/>
+  <rect x="54" y="70" width="5" height="14" rx="2" fill="#333"/>
+  <!-- Tail (bushy) -->
+  <ellipse cx="80" cy="50" rx="10" ry="6" fill="#F44336" transform="rotate(-30 80 50)"/>
+  <ellipse cx="84" cy="46" rx="5" ry="3" fill="white" transform="rotate(-30 84 46)"/>
+</svg>
