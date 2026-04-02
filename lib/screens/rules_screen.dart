@@ -9,6 +9,7 @@ class RulesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(title: const Text('Rules')),
       body: ListView(
@@ -42,15 +43,18 @@ class RulesScreen extends StatelessWidget {
                       'Interactive Tutorial',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
+                        color: isDark
+                            ? const Color(0xFFE0DDD5)
+                            : theme.colorScheme.primary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Step-by-step guide with animations',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: isDark
+                            ? const Color(0xFFB5B0A8)
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -82,7 +86,9 @@ class RulesScreen extends StatelessWidget {
                     'Quick Reference',
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
+                      color: isDark
+                          ? const Color(0xFFE0DDD5)
+                          : theme.colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -114,7 +120,9 @@ class RulesScreen extends StatelessWidget {
                     'Animal Values',
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
+                      color: isDark
+                          ? const Color(0xFFE0DDD5)
+                          : theme.colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 12),

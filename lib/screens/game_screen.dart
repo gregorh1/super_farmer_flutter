@@ -687,6 +687,7 @@ class _PlayerCountSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Row(
       children: List.generate(
         AppConstants.maxPlayers - AppConstants.minPlayers + 1,
@@ -711,7 +712,9 @@ class _PlayerCountSelector extends StatelessWidget {
                     border: Border.all(
                       color: isSelected
                           ? theme.colorScheme.primary
-                          : theme.colorScheme.outline.withValues(alpha: 0.3),
+                          : isDark
+                              ? Colors.white.withValues(alpha: 0.15)
+                              : theme.colorScheme.outline.withValues(alpha: 0.3),
                       width: isSelected ? 2 : 1,
                     ),
                     boxShadow: isSelected

@@ -771,7 +771,7 @@ void main() {
       final theme = SuperFarmerTheme.darkTheme;
       expect(theme, isA<ThemeData>());
       expect(theme.colorScheme.primary, isNotNull);
-      expect(theme.scaffoldBackgroundColor, const Color(0xFF121212));
+      expect(theme.scaffoldBackgroundColor, const Color(0xFF162016));
       expect(theme.colorScheme.brightness, Brightness.dark);
     });
 
