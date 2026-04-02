@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../models/animal.dart';
 import '../models/exchange.dart';
 import '../providers/game_provider.dart';
+import 'farm_decorations.dart';
 
 class PlayerArea extends StatefulWidget {
   const PlayerArea({
@@ -179,40 +180,58 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
           offset: Offset(shakeOffset, 0),
           child: Stack(
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
+              WoodenFrame(
+                borderWidth: widget.isCurrentPlayer ? 4.0 : 2.5,
+                cornerRadius: 12,
+                woodColor: widget.isCurrentPlayer
+                    ? const Color(0xFF8D6E63)
+                    : const Color(0xFFBCAAA4),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
                     color: widget.isCurrentPlayer
-                        ? color
-                        : color.withValues(alpha: 0.3),
-                    width: widget.isCurrentPlayer ? 3 : 1,
+                        ? color.withValues(alpha: 0.08)
+                        : theme.colorScheme.surface,
+                    boxShadow: widget.isCurrentPlayer
+                        ? [
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : null,
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                  color: widget.isCurrentPlayer
-                      ? color.withValues(alpha: 0.08)
-                      : theme.colorScheme.surface,
-                  boxShadow: widget.isCurrentPlayer
-                      ? [
-                          BoxShadow(
-                            color: color.withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            spreadRadius: 1,
-                          ),
-                        ]
-                      : null,
-                ),
-                clipBehavior: Clip.hardEdge,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                  clipBehavior: Clip.hardEdge,
+                  child: Stack(
                     children: [
-                      _buildHeader(color, theme),
-                      const SizedBox(height: 4),
-                      _buildAnimalRow(color, theme),
-                      const SizedBox(height: 4),
-                      _buildDogRow(color, theme),
+                      // Fence texture at bottom
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        height: 14,
+                        child: CustomPaint(
+                          painter: FencePainter(
+                            fenceColor: color.withValues(alpha: 0.08),
+                            picketSpacing: 10,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildHeader(color, theme),
+                            const SizedBox(height: 4),
+                            _buildAnimalRow(color, theme),
+                            const SizedBox(height: 4),
+                            _buildDogRow(color, theme),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),

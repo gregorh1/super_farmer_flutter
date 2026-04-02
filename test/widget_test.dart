@@ -15,6 +15,8 @@ import 'package:super_farmer/screens/splash_screen.dart';
 import 'package:super_farmer/theme.dart';
 import 'package:super_farmer/widgets/dice_center.dart';
 import 'package:super_farmer/providers/settings_provider.dart';
+import 'package:super_farmer/widgets/animal_card.dart';
+import 'package:super_farmer/widgets/farm_decorations.dart';
 import 'package:super_farmer/widgets/player_area.dart';
 import 'package:super_farmer/widgets/player_setup_card.dart';
 import 'package:super_farmer/widgets/settings_sheet.dart';
@@ -107,7 +109,7 @@ void main() {
   });
 
   group('SplashScreen', () {
-    testWidgets('displays app name and tractor emoji', (tester) async {
+    testWidgets('displays app name and barn branding', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: SplashScreen(onComplete: () {}),
@@ -117,7 +119,8 @@ void main() {
 
       expect(find.text('Super Farmer'), findsOneWidget);
       expect(find.text('Collect your animals!'), findsOneWidget);
-      expect(find.text('\u{1F69C}'), findsOneWidget);
+      // Barn and rabbit SVG replace the old tractor emoji
+      expect(find.byType(CustomPaint), findsWidgets);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
       // Drain the pending timer
@@ -915,27 +918,21 @@ void main() {
 
     testWidgets('current player has highlighted border', (tester) async {
       await tester.pumpWidget(buildPlayerArea(isCurrentPlayer: true));
-      // Find the Container with BoxDecoration (the player area wrapper)
-      final containers = tester.widgetList<Container>(find.byType(Container));
-      final decorated = containers.where((c) {
-        final d = c.decoration;
-        return d is BoxDecoration && d.border != null;
-      });
-      expect(decorated, isNotEmpty);
-      final border = (decorated.first.decoration as BoxDecoration).border as Border;
-      expect(border.top.width, 3.0);
+      // Player area now uses WoodenFrame (CustomPaint) for borders
+      final woodenFrames = tester.widgetList<CustomPaint>(find.byType(CustomPaint));
+      final woodenBorders = woodenFrames.where((cp) => cp.painter is WoodenBorderPainter);
+      expect(woodenBorders, isNotEmpty);
+      final painter = woodenBorders.first.painter as WoodenBorderPainter;
+      expect(painter.borderWidth, 4.0);
     });
 
     testWidgets('non-current player has thinner border', (tester) async {
       await tester.pumpWidget(buildPlayerArea(isCurrentPlayer: false));
-      final containers = tester.widgetList<Container>(find.byType(Container));
-      final decorated = containers.where((c) {
-        final d = c.decoration;
-        return d is BoxDecoration && d.border != null;
-      });
-      expect(decorated, isNotEmpty);
-      final border = (decorated.first.decoration as BoxDecoration).border as Border;
-      expect(border.top.width, 1.0);
+      final woodenFrames = tester.widgetList<CustomPaint>(find.byType(CustomPaint));
+      final woodenBorders = woodenFrames.where((cp) => cp.painter is WoodenBorderPainter);
+      expect(woodenBorders, isNotEmpty);
+      final painter = woodenBorders.first.painter as WoodenBorderPainter;
+      expect(painter.borderWidth, 2.5);
     });
 
     testWidgets('trade up buttons exist for each exchange pair', (tester) async {
@@ -3561,6 +3558,211 @@ void _audioServiceTests() {
 
       // Sound is off, so slider should not be visible
       expect(find.byType(Slider), findsNothing);
+    });
+  });
+
+  group('Farm decorations', () {
+    testWidgets('WoodenFrame renders CustomPaint with WoodenBorderPainter', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: WoodenFrame(
+              borderWidth: 5.0,
+              cornerRadius: 10.0,
+              child: const SizedBox(width: 100, height: 100),
+            ),
+          ),
+        ),
+      );
+
+      final customPaints = tester.widgetList<CustomPaint>(find.byType(CustomPaint));
+      final woodenPainters = customPaints.where((cp) => cp.painter is WoodenBorderPainter);
+      expect(woodenPainters, isNotEmpty);
+
+      final painter = woodenPainters.first.painter as WoodenBorderPainter;
+      expect(painter.borderWidth, 5.0);
+      expect(painter.cornerRadius, 10.0);
+    });
+
+    testWidgets('WoodenBorderPainter shouldRepaint detects changes', (tester) async {
+      final p1 = WoodenBorderPainter(borderWidth: 4.0);
+      final p2 = WoodenBorderPainter(borderWidth: 4.0);
+      final p3 = WoodenBorderPainter(borderWidth: 6.0);
+      expect(p1.shouldRepaint(p2), isFalse);
+      expect(p1.shouldRepaint(p3), isTrue);
+    });
+
+    testWidgets('FencePainter shouldRepaint detects changes', (tester) async {
+      final p1 = FencePainter(fenceColor: Colors.brown);
+      final p2 = FencePainter(fenceColor: Colors.brown);
+      final p3 = FencePainter(fenceColor: Colors.red);
+      expect(p1.shouldRepaint(p2), isFalse);
+      expect(p1.shouldRepaint(p3), isTrue);
+    });
+
+    testWidgets('HayTexturePainter shouldRepaint detects changes', (tester) async {
+      final p1 = HayTexturePainter(seed: 1);
+      final p2 = HayTexturePainter(seed: 1);
+      final p3 = HayTexturePainter(seed: 2);
+      expect(p1.shouldRepaint(p2), isFalse);
+      expect(p1.shouldRepaint(p3), isTrue);
+    });
+
+    testWidgets('BarnPainter shouldRepaint detects changes', (tester) async {
+      final p1 = BarnPainter(barnColor: Colors.red);
+      final p2 = BarnPainter(barnColor: Colors.red);
+      final p3 = BarnPainter(barnColor: Colors.blue);
+      expect(p1.shouldRepaint(p2), isFalse);
+      expect(p1.shouldRepaint(p3), isTrue);
+    });
+  });
+
+  group('AnimalCard widget', () {
+    testWidgets('renders animal SVG without emoji watermark', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimalCard(
+              animal: Animal.rabbit,
+              count: 5,
+            ),
+          ),
+        ),
+      );
+
+      // Should show the animal label and count
+      expect(find.text('Rabbit'), findsOneWidget);
+      expect(find.text('5'), findsOneWidget);
+      // Should have WoodenFrame (CustomPaint with WoodenBorderPainter)
+      final customPaints = tester.widgetList<CustomPaint>(find.byType(CustomPaint));
+      final woodenPainters = customPaints.where((cp) => cp.painter is WoodenBorderPainter);
+      expect(woodenPainters, isNotEmpty);
+      // Should NOT have any emoji text
+      final textWidgets = tester.widgetList<Text>(find.byType(Text));
+      for (final text in textWidgets) {
+        final data = text.data ?? '';
+        // Emoji code points are above U+1F000
+        final hasEmoji = data.runes.any((r) => r > 0x1F000);
+        expect(hasEmoji, isFalse, reason: 'Found emoji in text: $data');
+      }
+    });
+
+    testWidgets('shows attacked visual state', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimalCard(
+              animal: Animal.rabbit,
+              visualState: AnimalVisualState.attacked,
+            ),
+          ),
+        ),
+      );
+
+      // Should show warning icon for attacked state
+      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+    });
+
+    testWidgets('shows protected visual state', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimalCard(
+              animal: Animal.smallDog,
+              visualState: AnimalVisualState.protected,
+            ),
+          ),
+        ),
+      );
+
+      // Should show shield icon for protected state
+      expect(find.byIcon(Icons.shield), findsOneWidget);
+    });
+
+    testWidgets('normal state shows no overlay icons', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimalCard(
+              animal: Animal.cow,
+              visualState: AnimalVisualState.normal,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
+      expect(find.byIcon(Icons.shield), findsNothing);
+    });
+
+    testWidgets('idle animation controller runs when enabled', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimalCard(
+              animal: Animal.pig,
+              enableIdleAnimation: true,
+            ),
+          ),
+        ),
+      );
+
+      // Pump a frame to let animation start
+      await tester.pump(const Duration(milliseconds: 500));
+      // No crash means animation is running
+      expect(find.text('Pig'), findsOneWidget);
+    });
+
+    testWidgets('hay texture renders at bottom of card', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimalCard(
+              animal: Animal.horse,
+            ),
+          ),
+        ),
+      );
+
+      final customPaints = tester.widgetList<CustomPaint>(find.byType(CustomPaint));
+      final hayPainters = customPaints.where((cp) => cp.painter is HayTexturePainter);
+      expect(hayPainters, isNotEmpty);
+    });
+
+    testWidgets('all animals render without errors', (tester) async {
+      for (final animal in Animal.values) {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimalCard(animal: animal, count: 3),
+            ),
+          ),
+        );
+        expect(find.text(animal.label), findsOneWidget);
+      }
+    });
+  });
+
+  group('Splash screen branding', () {
+    testWidgets('splash has barn painter and rabbit SVG', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SplashScreen(onComplete: () {}),
+        ),
+      );
+      await tester.pump();
+
+      // BarnPainter should be present
+      final customPaints = tester.widgetList<CustomPaint>(find.byType(CustomPaint));
+      final barnPainters = customPaints.where((cp) => cp.painter is BarnPainter);
+      expect(barnPainters, isNotEmpty);
+
+      // Fence and hay painters for decoration
+      final fencePainters = customPaints.where((cp) => cp.painter is FencePainter);
+      expect(fencePainters, isNotEmpty);
+
+      // Drain timer
+      await tester.pump(const Duration(seconds: 4));
     });
   });
 }

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Cute rabbit centered in safe zone (24dp inset = viewport 24-84) -->
+    <!-- Body -->
+    <path
+        android:fillColor="#9E9E9E"
+        android:pathData="M54,62 A12,10 0 1,1 54,62.01 Z"/>
+    <!-- Head -->
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M54,48 A8,8 0 1,1 54,48.01 Z"/>
+    <!-- Left ear -->
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M49,28 A3,10 0 1,1 49,28.01 Z"/>
+    <path
+        android:fillColor="#F48FB1"
+        android:pathData="M49,28 A2,7 0 1,1 49,28.01 Z"/>
+    <!-- Right ear -->
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M59,28 A3,10 0 1,1 59,28.01 Z"/>
+    <path
+        android:fillColor="#F48FB1"
+        android:pathData="M59,28 A2,7 0 1,1 59,28.01 Z"/>
+    <!-- Eyes -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M51,46 A2,2 0 1,1 51,46.01 Z"/>
+    <path
+        android:fillColor="#333333"
+        android:pathData="M51,46 A1,1 0 1,1 51,46.01 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M57,46 A2,2 0 1,1 57,46.01 Z"/>
+    <path
+        android:fillColor="#333333"
+        android:pathData="M57,46 A1,1 0 1,1 57,46.01 Z"/>
+    <!-- Nose -->
+    <path
+        android:fillColor="#F48FB1"
+        android:pathData="M54,50 A1.5,1 0 1,1 54,50.01 Z"/>
+    <!-- Tail -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M66,60 A3,3 0 1,1 66,60.01 Z"/>
+    <!-- Feet -->
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M47,72 A4,2.5 0 1,1 47,72.01 Z"/>
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M61,72 A4,2.5 0 1,1 61,72.01 Z"/>
+</vector>

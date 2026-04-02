@@ -267,11 +267,14 @@ class _GameScreenState extends ConsumerState<GameScreen>
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
         child: Column(
           children: [
-            // Header
-            Icon(
-              Icons.agriculture,
-              size: 56,
-              color: theme.colorScheme.primary,
+            // Header — farm animal SVG instead of generic icon
+            SizedBox(
+              width: 56,
+              height: 56,
+              child: SvgPicture.asset(
+                'assets/images/cow.svg',
+                fit: BoxFit.contain,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
