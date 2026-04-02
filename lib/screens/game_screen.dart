@@ -605,9 +605,9 @@ class _CompactPlayerStrip extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                 ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               // Name
-              Expanded(
+              Flexible(
                 child: Text(
                   player.name,
                   style: theme.textTheme.labelMedium?.copyWith(
@@ -616,6 +616,7 @@ class _CompactPlayerStrip extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 4),
               // Progress
               Text(
                 '$progressPercent%',
@@ -624,13 +625,13 @@ class _CompactPlayerStrip extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 3),
               // Tiny animal summary
               ...PlayerArea.farmAnimals.map((a) => Padding(
-                    padding: const EdgeInsets.only(left: 2),
+                    padding: const EdgeInsets.only(left: 1),
                     child: SizedBox(
-                      width: 12,
-                      height: 12,
+                      width: 10,
+                      height: 10,
                       child: Opacity(
                         opacity: player.countOf(a) > 0 ? 1.0 : 0.25,
                         child: SvgPicture.asset(a.assetPath,

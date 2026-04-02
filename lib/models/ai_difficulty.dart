@@ -1,8 +1,8 @@
 /// AI difficulty levels for computer opponents.
 enum AiDifficulty {
-  easy('Easy', 'Random moves, no strategy'),
-  medium('Medium', 'Trades optimally, buys dogs when threatened'),
-  hard('Hard', 'Calculates optimal paths, times purchases');
+  easy('Easy', 'Random moves'),
+  medium('Medium', 'Smart trades & dogs'),
+  hard('Hard', 'Optimal strategy');
 
   const AiDifficulty(this.label, this.description);
 
