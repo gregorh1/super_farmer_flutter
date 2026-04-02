@@ -23,13 +23,17 @@ class PlayerSetupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final playerColor = availablePlayerColors[selectedColorIndex].color;
 
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: playerColor.withValues(alpha: 0.4), width: 2),
+        side: BorderSide(
+          color: playerColor.withValues(alpha: isDark ? 0.6 : 0.4),
+          width: isDark ? 2.5 : 2,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -80,7 +84,13 @@ class PlayerSetupCard extends StatelessWidget {
               onChanged: onNameChanged,
               decoration: InputDecoration(
                 hintText: 'Player ${playerIndex + 1}',
+                hintStyle: isDark
+                    ? TextStyle(color: Colors.grey[500])
+                    : null,
                 labelText: 'Name (optional)',
+                labelStyle: isDark
+                    ? TextStyle(color: Colors.grey[400])
+                    : null,
                 prefixIcon: Icon(Icons.person_outline, color: playerColor),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -99,7 +109,9 @@ class PlayerSetupCard extends StatelessWidget {
             Text(
               'Color',
               style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                color: isDark
+                    ? Colors.grey[400]
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 8),
@@ -116,8 +128,8 @@ class PlayerSetupCard extends StatelessWidget {
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeInOut,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      height: 36,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      height: 48,
                       decoration: BoxDecoration(
                         color: color.color,
                         borderRadius: BorderRadius.circular(10),

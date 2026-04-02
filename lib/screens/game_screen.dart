@@ -141,7 +141,9 @@ class _GameScreenState extends ConsumerState<GameScreen>
             Text(
               'Collect one of each animal to win!',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                color: theme.brightness == Brightness.dark
+                    ? Colors.grey[300]
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 28),
@@ -339,7 +341,7 @@ class _PlayerCountSelector extends StatelessWidget {
           final isSelected = value == count;
           return Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 6),
               child: GestureDetector(
                 onTap: () => onChanged(value),
                 child: AnimatedContainer(
@@ -377,10 +379,10 @@ class _PlayerCountSelector extends StatelessWidget {
                           value,
                           (_) => Padding(
                             padding:
-                                const EdgeInsets.symmetric(horizontal: 1),
+                                const EdgeInsets.symmetric(horizontal: 2),
                             child: Icon(
                               Icons.person,
-                              size: 16,
+                              size: 18,
                               color: isSelected
                                   ? Colors.white
                                   : theme.colorScheme.onSurface
