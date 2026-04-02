@@ -6,8 +6,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../models/ai_difficulty.dart';
 import '../models/animal.dart';
 import '../models/exchange.dart';
+import '../models/game_record.dart';
 import '../providers/game_provider.dart';
 import '../providers/settings_provider.dart';
+import '../providers/stats_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/dice_center.dart';
 import '../widgets/player_area.dart';
@@ -169,6 +171,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
     ref.listen<GameState>(gameProvider, (prev, next) {
       if (next.winner != null && (prev?.winner == null)) {
+        _recordGameResult(next);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _showWinnerDialog(next.winner!);
         });
@@ -419,6 +422,21 @@ class _GameScreenState extends ConsumerState<GameScreen>
         ],
       ),
     );
+  }
+
+  void _recordGameResult(GameState game) {
+    final winnerHerd = game.players.firstWhere((p) => p.name == game.winner);
+    final record = GameRecord(
+      date: DateTime.now(),
+      playerNames: game.players.map((p) => p.name).toList(),
+      winnerName: game.winner!,
+      playerCount: game.players.length,
+      totalTurns: game.turnNumber,
+      lastAnimalAcquired:
+          game.lastAnimalAcquired?.name ?? Animal.horse.name,
+      winnerIsAi: winnerHerd.isAi,
+    );
+    ref.read(statsProvider.notifier).addRecord(record);
   }
 
   void _showWinnerDialog(String winnerName) {

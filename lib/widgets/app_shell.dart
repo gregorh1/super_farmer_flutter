@@ -10,6 +10,7 @@ class AppShell extends StatelessWidget {
     final location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/game')) return 1;
     if (location.startsWith('/rules')) return 2;
+    if (location.startsWith('/stats')) return 3;
     return 0;
   }
 
@@ -28,6 +29,8 @@ class AppShell extends StatelessWidget {
               context.go('/game');
             case 2:
               context.go('/rules');
+            case 3:
+              context.go('/stats');
           }
         },
         destinations: const [
@@ -45,6 +48,11 @@ class AppShell extends StatelessWidget {
             icon: Icon(Icons.menu_book_outlined),
             selectedIcon: Icon(Icons.menu_book),
             label: 'Rules',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart),
+            label: 'Stats',
           ),
         ],
       ),

@@ -80,6 +80,8 @@ class GameState {
     this.winner,
     this.isAiThinking = false,
     this.aiTradesMade = const [],
+    this.turnNumber = 0,
+    this.lastAnimalAcquired,
   });
 
   final List<PlayerHerd> players;
@@ -91,6 +93,8 @@ class GameState {
   final String? winner;
   final bool isAiThinking;
   final List<ExchangeRate> aiTradesMade;
+  final int turnNumber;
+  final Animal? lastAnimalAcquired;
 
   PlayerHerd? get currentPlayer =>
       players.isEmpty ? null : players[currentPlayerIndex];
@@ -111,6 +115,9 @@ class GameState {
     bool clearWinner = false,
     bool? isAiThinking,
     List<ExchangeRate>? aiTradesMade,
+    int? turnNumber,
+    Animal? lastAnimalAcquired,
+    bool clearLastAnimalAcquired = false,
   }) {
     return GameState(
       players: players ?? this.players,
@@ -122,6 +129,10 @@ class GameState {
       winner: clearWinner ? null : (winner ?? this.winner),
       isAiThinking: isAiThinking ?? this.isAiThinking,
       aiTradesMade: aiTradesMade ?? this.aiTradesMade,
+      turnNumber: turnNumber ?? this.turnNumber,
+      lastAnimalAcquired: clearLastAnimalAcquired
+          ? null
+          : (lastAnimalAcquired ?? this.lastAnimalAcquired),
     );
   }
 
@@ -140,6 +151,26 @@ class GameNotifier extends StateNotifier<GameState> {
   GameNotifier([Random? random]) : _random = random, super(const GameState());
 
   final Random? _random;
+
+  /// Determines which animal was the last one acquired to complete the set.
+  /// Compares the winning herd against what it had before the last action.
+  static Animal? findLastAnimalAcquired(
+    Map<Animal, int> before,
+    Map<Animal, int> after,
+  ) {
+    final farmAnimals = Animal.values
+        .where((a) => a != Animal.smallDog && a != Animal.bigDog);
+    // Find animals that went from 0 to >=1
+    Animal? last;
+    for (final a in farmAnimals) {
+      final hadBefore = (before[a] ?? 0) >= 1;
+      final hasAfter = (after[a] ?? 0) >= 1;
+      if (!hadBefore && hasAfter) {
+        last = a;
+      }
+    }
+    return last;
+  }
 
   void startGame(
     List<String> playerNames, [
@@ -181,6 +212,7 @@ class GameNotifier extends StateNotifier<GameState> {
       clearLastEvent: true,
       isAiThinking: false,
       aiTradesMade: const [],
+      turnNumber: state.turnNumber + 1,
     );
   }
 
@@ -288,6 +320,7 @@ class GameNotifier extends StateNotifier<GameState> {
     );
 
     // Update state
+    final previousAnimals = Map<Animal, int>.from(state.players[playerIndex].animals);
     final updatedPlayers = List<PlayerHerd>.from(state.players);
     updatedPlayers[playerIndex] = updatedPlayers[playerIndex].copyWith(
       animals: playerAnimals,
@@ -296,8 +329,10 @@ class GameNotifier extends StateNotifier<GameState> {
     // Check win condition
     final updatedHerd = updatedPlayers[playerIndex];
     String? winner;
+    Animal? lastAnimal;
     if (updatedHerd.hasWon) {
       winner = updatedHerd.name;
+      lastAnimal = findLastAnimalAcquired(previousAnimals, playerAnimals);
     }
 
     state = state.copyWith(
@@ -305,6 +340,7 @@ class GameNotifier extends StateNotifier<GameState> {
       bank: bank,
       lastEvent: event,
       winner: winner,
+      lastAnimalAcquired: lastAnimal,
     );
 
     return roll;
@@ -314,7 +350,8 @@ class GameNotifier extends StateNotifier<GameState> {
   /// receives [rate.toCount] of [rate.to] from the bank.
   bool trade(ExchangeRate rate) {
     final playerIndex = state.currentPlayerIndex;
-    final playerAnimals = Map<Animal, int>.from(state.players[playerIndex].animals);
+    final previousAnimals = Map<Animal, int>.from(state.players[playerIndex].animals);
+    final playerAnimals = Map<Animal, int>.from(previousAnimals);
     final bank = Map<Animal, int>.from(state.bank);
 
     // Validate player has enough
@@ -335,14 +372,17 @@ class GameNotifier extends StateNotifier<GameState> {
 
     // Check win after trade
     String? winner;
+    Animal? lastAnimal;
     if (updatedPlayers[playerIndex].hasWon) {
       winner = updatedPlayers[playerIndex].name;
+      lastAnimal = findLastAnimalAcquired(previousAnimals, playerAnimals);
     }
 
     state = state.copyWith(
       players: updatedPlayers,
       bank: bank,
       winner: winner,
+      lastAnimalAcquired: lastAnimal,
     );
 
     return true;
