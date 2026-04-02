@@ -25,6 +25,9 @@ import 'package:super_farmer/screens/rules_screen.dart';
 import 'package:super_farmer/models/game_record.dart';
 import 'package:super_farmer/providers/stats_provider.dart';
 import 'package:super_farmer/screens/stats_screen.dart';
+import 'package:super_farmer/models/achievement.dart';
+import 'package:super_farmer/providers/achievement_provider.dart';
+import 'package:super_farmer/screens/achievements_screen.dart';
 import 'package:super_farmer/services/audio_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

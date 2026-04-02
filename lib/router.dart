@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'screens/achievements_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/game_screen.dart';
 import 'screens/rules_screen.dart';
@@ -39,6 +40,12 @@ final router = GoRouter(
           path: '/stats',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: StatsScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/achievements',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: AchievementsScreen(),
           ),
         ),
       ],

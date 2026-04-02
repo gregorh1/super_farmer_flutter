@@ -36,6 +36,8 @@ class PlayerHerd {
     this.color = const Color(0xFF2E7D32),
     this.isAi = false,
     this.aiDifficulty,
+    this.wolfAttacksSurvived = 0,
+    this.wasBehindAtTurn20 = false,
   });
 
   final Map<Animal, int> animals;
@@ -44,6 +46,12 @@ class PlayerHerd {
   final bool isAi;
   final AiDifficulty? aiDifficulty;
 
+  /// Number of wolf attacks this player survived (big dog sacrificed) in the current game.
+  final int wolfAttacksSurvived;
+
+  /// Whether this player had the lowest win % at turn 20+.
+  final bool wasBehindAtTurn20;
+
   PlayerHerd copyWith({
     Map<Animal, int>? animals,
     String? name,
@@ -51,6 +59,8 @@ class PlayerHerd {
     bool? isAi,
     AiDifficulty? aiDifficulty,
     bool clearAiDifficulty = false,
+    int? wolfAttacksSurvived,
+    bool? wasBehindAtTurn20,
   }) {
     return PlayerHerd(
       animals: animals ?? this.animals,
@@ -59,6 +69,8 @@ class PlayerHerd {
       isAi: isAi ?? this.isAi,
       aiDifficulty:
           clearAiDifficulty ? null : (aiDifficulty ?? this.aiDifficulty),
+      wolfAttacksSurvived: wolfAttacksSurvived ?? this.wolfAttacksSurvived,
+      wasBehindAtTurn20: wasBehindAtTurn20 ?? this.wasBehindAtTurn20,
     );
   }
 
@@ -241,6 +253,39 @@ class GameNotifier extends StateNotifier<GameState> {
     state = state.copyWith(aiTradesMade: trades);
   }
 
+  /// Computes win progress for a player (0.0 to 1.0).
+  static double winProgress(PlayerHerd player) {
+    int collected = 0;
+    for (final a in Animal.values) {
+      if (a == Animal.smallDog || a == Animal.bigDog) continue;
+      if (player.countOf(a) >= 1) collected++;
+    }
+    return collected / 5.0;
+  }
+
+  /// Marks the player with the lowest win progress as underdog.
+  void _markUnderdogStatus(List<PlayerHerd> players) {
+    double lowestProgress = 2.0;
+    int lowestIndex = -1;
+    bool tied = false;
+    for (int i = 0; i < players.length; i++) {
+      final p = winProgress(players[i]);
+      if (p < lowestProgress) {
+        lowestProgress = p;
+        lowestIndex = i;
+        tied = false;
+      } else if (p == lowestProgress) {
+        tied = true;
+      }
+    }
+    // Only mark if there's a clear lowest (not tied)
+    if (!tied && lowestIndex >= 0) {
+      players[lowestIndex] = players[lowestIndex].copyWith(
+        wasBehindAtTurn20: true,
+      );
+    }
+  }
+
   /// Rolls dice, applies breeding, then applies predator attacks.
   /// Returns the dice roll result.
   DiceRollResult rollDice() {
@@ -290,12 +335,14 @@ class GameNotifier extends StateNotifier<GameState> {
     }
 
     // Apply wolf attack: lose all animals except horse and small dog (unless big dog protects)
+    var wolfSurvived = false;
     if (roll.hasWolf) {
       if ((playerAnimals[Animal.bigDog] ?? 0) > 0) {
         // Big dog is sacrificed back to bank
         playerAnimals[Animal.bigDog] = (playerAnimals[Animal.bigDog] ?? 0) - 1;
         bank[Animal.bigDog] = (bank[Animal.bigDog] ?? 0) + 1;
         bigDogSacrificed = true;
+        wolfSurvived = true;
       } else {
         // Lose all animals except horse and small dog
         for (final animal in Animal.values) {
@@ -324,7 +371,15 @@ class GameNotifier extends StateNotifier<GameState> {
     final updatedPlayers = List<PlayerHerd>.from(state.players);
     updatedPlayers[playerIndex] = updatedPlayers[playerIndex].copyWith(
       animals: playerAnimals,
+      wolfAttacksSurvived: wolfSurvived
+          ? updatedPlayers[playerIndex].wolfAttacksSurvived + 1
+          : null,
     );
+
+    // Track underdog status at turn 20+
+    if (state.turnNumber >= 20 * state.players.length) {
+      _markUnderdogStatus(updatedPlayers);
+    }
 
     // Check win condition
     final updatedHerd = updatedPlayers[playerIndex];
