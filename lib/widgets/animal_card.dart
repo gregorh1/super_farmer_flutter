@@ -39,7 +39,10 @@ class AnimalCard extends StatelessWidget {
               child: Text(
                 animal.label,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: size * 0.12),
+                style: TextStyle(
+                  fontSize: size * 0.12,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
             if (count != null)
@@ -50,13 +53,23 @@ class AnimalCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF2E7D32)
+                        : Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(10),
+                    border: Theme.of(context).brightness == Brightness.dark
+                        ? Border.all(
+                            color: const Color(0xFF81C784),
+                            width: 1,
+                          )
+                        : null,
                   ),
                   child: Text(
                     '$count',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFFE0E0E0)
+                          : Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),

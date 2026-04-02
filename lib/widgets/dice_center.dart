@@ -23,24 +23,30 @@ class DiceCenter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final playerColor =
         PlayerArea.playerColors[gameState.currentPlayerIndex % PlayerArea.playerColors.length];
     final currentPlayer = gameState.currentPlayer!;
 
     return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: isDark ? 0 : 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: isDark
+            ? BorderSide(color: Colors.white.withValues(alpha: 0.12))
+            : BorderSide.none,
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Current player indicator
+            // Current player indicator — no text truncation
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: playerColor.withValues(alpha: 0.12),
+                color: playerColor.withValues(alpha: isDark ? 0.2 : 0.12),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: playerColor, width: 2),
               ),
@@ -48,22 +54,21 @@ class DiceCenter extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 8,
-                    height: 8,
+                    width: 10,
+                    height: 10,
                     decoration: BoxDecoration(
                       color: playerColor,
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      "${currentPlayer.name}'s Turn",
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: playerColor,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                  const SizedBox(width: 8),
+                  Text(
+                    "${currentPlayer.name}'s Turn",
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isDark
+                          ? playerColor.withValues(alpha: 0.9)
+                          : playerColor,
                     ),
                   ),
                 ],
@@ -83,7 +88,7 @@ class DiceCenter extends StatelessWidget {
               icon: const Icon(Icons.casino, size: 20),
               label: const Text('Roll Dice'),
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -91,15 +96,24 @@ class DiceCenter extends StatelessWidget {
             ),
             const SizedBox(height: 8),
 
-            // End turn button
+            // End turn button — explicit styling for dark mode visibility
             OutlinedButton.icon(
               onPressed: _canEndTurn ? onEndTurn : null,
-              icon: const Icon(Icons.skip_next, size: 18),
+              icon: const Icon(Icons.skip_next, size: 20),
               label: const Text('End Turn'),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
+                ),
+                foregroundColor: isDark
+                    ? const Color(0xFFE0E0E0)
+                    : theme.colorScheme.primary,
+                side: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF81C784).withValues(alpha: 0.6)
+                      : theme.colorScheme.primary,
+                  width: isDark ? 1.5 : 1,
                 ),
               ),
             ),
@@ -119,7 +133,7 @@ class DiceCenter extends StatelessWidget {
           color: const Color(0xFF2E7D32),
           label: 'Green',
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         _DieResult(
           face: roll.red,
           color: const Color(0xFFC62828),
@@ -159,8 +173,8 @@ class _DieResult extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 52,
-          height: 52,
+          width: 56,
+          height: 56,
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(10),
@@ -178,17 +192,17 @@ class _DieResult extends StatelessWidget {
           child: Center(
             child: SvgPicture.asset(
               _assetPath,
-              width: 32,
-              height: 32,
+              width: 34,
+              height: 34,
               fit: BoxFit.contain,
             ),
           ),
         ),
-        const SizedBox(height: 3),
+        const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: FontWeight.w600,
             color: color,
           ),

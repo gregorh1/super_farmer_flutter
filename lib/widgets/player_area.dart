@@ -49,17 +49,26 @@ class PlayerArea extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = playerColors[playerIndex % playerColors.length];
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Softer borders in dark mode
+    final borderColor = isCurrentPlayer
+        ? color
+        : isDark
+            ? color.withValues(alpha: 0.15)
+            : color.withValues(alpha: 0.3);
+    final bgColor = isCurrentPlayer
+        ? color.withValues(alpha: isDark ? 0.12 : 0.08)
+        : theme.colorScheme.surface;
 
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
-          color: isCurrentPlayer ? color : color.withValues(alpha: 0.3),
+          color: borderColor,
           width: isCurrentPlayer ? 3 : 1,
         ),
         borderRadius: BorderRadius.circular(12),
-        color: isCurrentPlayer
-            ? color.withValues(alpha: 0.08)
-            : theme.colorScheme.surface,
+        color: bgColor,
         boxShadow: isCurrentPlayer
             ? [
                 BoxShadow(
@@ -77,14 +86,14 @@ class PlayerArea extends StatelessWidget {
           fit: BoxFit.scaleDown,
           alignment: Alignment.center,
           child: SizedBox(
-            width: 400,
+            width: 440,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildHeader(color, theme),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 _buildAnimalRow(color, theme),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 _buildDogRow(color, theme),
               ],
             ),
@@ -96,11 +105,12 @@ class PlayerArea extends StatelessWidget {
 
   Widget _buildHeader(Color color, ThemeData theme) {
     final progressPercent = (_winProgress * 100).round();
+    final isDark = theme.brightness == Brightness.dark;
     return Row(
       children: [
         Container(
-          width: 10,
-          height: 10,
+          width: 12,
+          height: 12,
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
@@ -112,28 +122,31 @@ class PlayerArea extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           player.name,
-          style: theme.textTheme.labelLarge?.copyWith(
+          style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
-            color: isCurrentPlayer ? color : null,
+            color: isCurrentPlayer
+                ? color
+                : theme.colorScheme.onSurface,
           ),
         ),
         const Spacer(),
         Text(
           '$progressPercent%',
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: color,
+          style: TextStyle(
+            fontSize: 14,
+            color: isDark ? color.withValues(alpha: 0.9) : color,
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(width: 6),
         SizedBox(
-          width: 60,
-          height: 6,
+          width: 70,
+          height: 8,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: _winProgress,
-              backgroundColor: color.withValues(alpha: 0.15),
+              backgroundColor: color.withValues(alpha: isDark ? 0.2 : 0.15),
               valueColor: AlwaysStoppedAnimation(color),
             ),
           ),
@@ -165,8 +178,8 @@ class PlayerArea extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
-          width: 26,
-          height: 26,
+          width: 30,
+          height: 30,
           child: Opacity(
             opacity: hasOne ? 1.0 : 0.4,
             child: SvgPicture.asset(animal.assetPath, fit: BoxFit.contain),
@@ -176,7 +189,7 @@ class PlayerArea extends StatelessWidget {
         Text(
           '$count',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 15,
             fontWeight: FontWeight.bold,
             color: hasOne
                 ? theme.colorScheme.onSurface
@@ -208,8 +221,10 @@ class PlayerArea extends StatelessWidget {
         player.countOf(higherAnimal) >= 1 &&
         (gameState.bank[lowerAnimal] ?? 0) >= rate;
 
+    final isDark = theme.brightness == Brightness.dark;
+
     return SizedBox(
-      width: 28,
+      width: 36,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -220,17 +235,17 @@ class PlayerArea extends StatelessWidget {
             onTap: () => onTrade(forwardRate),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withValues(alpha: isDark ? 0.2 : 0.1),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               '$rate',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: color,
+                color: isDark ? color.withValues(alpha: 0.9) : color,
               ),
             ),
           ),
@@ -259,7 +274,7 @@ class PlayerArea extends StatelessWidget {
       children: [
         _buildDogCell(
           Animal.smallDog,
-          'Buy (1 Lamb)',
+          '1 Lmb',
           canBuySmallDog,
           Exchange.rates[4],
           color,
@@ -268,7 +283,7 @@ class PlayerArea extends StatelessWidget {
         const SizedBox(width: 16),
         _buildDogCell(
           Animal.bigDog,
-          'Buy (1 Cow)',
+          '1 Cow',
           canBuyBigDog,
           Exchange.rates[5],
           color,
@@ -280,46 +295,47 @@ class PlayerArea extends StatelessWidget {
 
   Widget _buildDogCell(
     Animal dog,
-    String tooltip,
+    String costLabel,
     bool canBuy,
     ExchangeRate rate,
     Color color,
     ThemeData theme,
   ) {
     final count = player.countOf(dog);
+    final isDark = theme.brightness == Brightness.dark;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
-          width: 18,
-          height: 18,
+          width: 20,
+          height: 20,
           child: Opacity(
             opacity: count > 0 ? 1.0 : 0.4,
             child: SvgPicture.asset(dog.assetPath, fit: BoxFit.contain),
           ),
         ),
-        const SizedBox(width: 3),
+        const SizedBox(width: 4),
         Text(
           'x$count',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
           ),
         ),
         const SizedBox(width: 4),
         SizedBox(
-          height: 22,
+          height: 30,
           child: TextButton(
             onPressed: canBuy ? () => onTrade(rate) : null,
             style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              minimumSize: Size.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              minimumSize: const Size(48, 30),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-              foregroundColor: color,
+              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              foregroundColor: isDark ? color.withValues(alpha: 0.9) : color,
             ),
-            child: Text(tooltip),
+            child: Text('Buy ($costLabel)'),
           ),
         ),
       ],
@@ -342,17 +358,18 @@ class _TradeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Minimum 32x32 for better tap targets (outer padding provides 48dp effective area)
     return SizedBox(
-      width: 22,
-      height: 22,
+      width: 32,
+      height: 32,
       child: IconButton(
         onPressed: enabled ? onTap : null,
-        icon: Icon(icon, size: 14),
+        icon: Icon(icon, size: 18),
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(),
         color: color,
         disabledColor: color.withValues(alpha: 0.2),
-        splashRadius: 12,
+        splashRadius: 16,
         tooltip: enabled ? null : 'Not enough animals',
       ),
     );

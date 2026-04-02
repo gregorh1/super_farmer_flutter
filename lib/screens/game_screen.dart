@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/exchange.dart';
 import '../providers/game_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/dice_center.dart';
@@ -158,13 +157,13 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     final hasLeftPlayer = playerCount >= 4;
     final hasRightPlayer = playerCount >= 2;
 
-    // Responsive sizing
+    // Responsive sizing — use more screen real estate
     final isCompact = constraints.maxHeight < 500;
-    final playerAreaHeight = isCompact ? 100.0 : 120.0;
-    final sidePlayerWidth = isCompact ? 110.0 : 130.0;
+    final playerAreaHeight = isCompact ? 110.0 : 135.0;
+    final sidePlayerWidth = isCompact ? 120.0 : 145.0;
 
     return Padding(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(6),
       child: Column(
         children: [
           // Top player (Player 3, rotated 180°)
@@ -177,7 +176,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 child: _buildPlayerArea(game, 2),
               ),
             ),
-          if (hasTopPlayer) const SizedBox(height: 4),
+          if (hasTopPlayer) const SizedBox(height: 6),
 
           // Middle row: left player, center, right player
           Expanded(
@@ -193,7 +192,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       child: _buildPlayerArea(game, 3),
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                 ],
 
                 // Center dice area
@@ -211,7 +210,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
                 // Right player (Player 2, rotated -90° = 3 quarter turns)
                 if (hasRightPlayer) ...[
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   SizedBox(
                     width: sidePlayerWidth,
                     child: RotatedBox(
@@ -224,7 +223,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             ),
           ),
 
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           // Bottom player (Player 1, no rotation)
           SizedBox(
             height: playerAreaHeight,
