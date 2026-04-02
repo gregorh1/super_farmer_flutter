@@ -23,6 +23,7 @@ import 'package:super_farmer/screens/rules_screen.dart';
 import 'package:super_farmer/models/game_record.dart';
 import 'package:super_farmer/providers/stats_provider.dart';
 import 'package:super_farmer/screens/stats_screen.dart';
+import 'package:super_farmer/services/audio_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// A fixed Random that always returns a specific sequence index.
@@ -1320,6 +1321,9 @@ void main() {
   // Tutorial carousel tests
   _tutorialCarouselTests();
   _rulesScreenTests();
+
+  // Audio service tests
+  _audioServiceTests();
 }
 
 // =============================================================================
@@ -1331,6 +1335,7 @@ void _settingsProviderTests() {
     test('default settings', () {
       const settings = GameSettings();
       expect(settings.soundEnabled, true);
+      expect(settings.volume, 0.7);
       expect(settings.animationSpeed, AnimationSpeed.normal);
       expect(settings.confirmEndTurn, false);
     });
@@ -1339,8 +1344,16 @@ void _settingsProviderTests() {
       const settings = GameSettings();
       final updated = settings.copyWith(soundEnabled: false);
       expect(updated.soundEnabled, false);
+      expect(updated.volume, 0.7);
       expect(updated.animationSpeed, AnimationSpeed.normal);
       expect(updated.confirmEndTurn, false);
+    });
+
+    test('copyWith updates volume', () {
+      const settings = GameSettings();
+      final updated = settings.copyWith(volume: 0.5);
+      expect(updated.volume, 0.5);
+      expect(updated.soundEnabled, true);
     });
 
     test('animation speed multipliers', () {
@@ -1377,6 +1390,21 @@ void _settingsProviderTests() {
       expect(notifier.state.confirmEndTurn, false);
       notifier.toggleConfirmEndTurn();
       expect(notifier.state.confirmEndTurn, true);
+    });
+
+    test('set volume', () {
+      final notifier = GameSettingsNotifier();
+      expect(notifier.state.volume, 0.7);
+      notifier.setVolume(0.3);
+      expect(notifier.state.volume, 0.3);
+    });
+
+    test('set volume clamps to valid range', () {
+      final notifier = GameSettingsNotifier();
+      notifier.setVolume(1.5);
+      expect(notifier.state.volume, 1.0);
+      notifier.setVolume(-0.5);
+      expect(notifier.state.volume, 0.0);
     });
   });
 }
@@ -3392,6 +3420,147 @@ void _playerAreaAnimationTests() {
 
       await notifier.clearAll();
       expect(notifier.state, isEmpty);
+    });
+  });
+}
+
+// =============================================================================
+// Audio service tests
+// =============================================================================
+
+void _audioServiceTests() {
+  group('GameSound', () {
+    test('has correct number of sounds', () {
+      expect(GameSound.values.length, 11);
+    });
+
+    test('each sound has an asset path', () {
+      for (final sound in GameSound.values) {
+        expect(sound.assetPath, startsWith('audio/'));
+        expect(sound.assetPath, endsWith('.wav'));
+      }
+    });
+
+    test('forAnimal maps farm animals correctly', () {
+      expect(GameSound.forAnimal(Animal.rabbit), GameSound.rabbit);
+      expect(GameSound.forAnimal(Animal.lamb), GameSound.lamb);
+      expect(GameSound.forAnimal(Animal.pig), GameSound.pig);
+      expect(GameSound.forAnimal(Animal.cow), GameSound.cow);
+      expect(GameSound.forAnimal(Animal.horse), GameSound.horse);
+    });
+
+    test('forAnimal returns null for dogs', () {
+      expect(GameSound.forAnimal(Animal.smallDog), isNull);
+      expect(GameSound.forAnimal(Animal.bigDog), isNull);
+    });
+  });
+
+  group('AudioService', () {
+    test('default volume is 0.7', () {
+      final service = AudioService();
+      expect(service.volume, 0.7);
+      expect(service.isMuted, false);
+      service.dispose();
+    });
+
+    test('setVolume clamps values', () {
+      final service = AudioService();
+      service.setVolume(1.5);
+      expect(service.volume, 1.0);
+      service.setVolume(-0.5);
+      expect(service.volume, 0.0);
+      service.setVolume(0.5);
+      expect(service.volume, 0.5);
+      service.dispose();
+    });
+
+    test('setMuted toggles mute state', () {
+      final service = AudioService();
+      expect(service.isMuted, false);
+      service.setMuted(true);
+      expect(service.isMuted, true);
+      service.setMuted(false);
+      expect(service.isMuted, false);
+      service.dispose();
+    });
+
+    test('play does nothing when muted', () async {
+      final service = AudioService();
+      service.setMuted(true);
+      // Should not throw
+      await service.play(GameSound.tap);
+      service.dispose();
+    });
+
+    test('play does nothing when volume is zero', () async {
+      final service = AudioService();
+      service.setVolume(0.0);
+      // Should not throw
+      await service.play(GameSound.tap);
+      service.dispose();
+    });
+
+    test('playAnimalSound does nothing for dogs', () async {
+      final service = AudioService();
+      service.setMuted(true);
+      // Should not throw even for non-mapped animals
+      await service.playAnimalSound(Animal.smallDog);
+      await service.playAnimalSound(Animal.bigDog);
+      service.dispose();
+    });
+  });
+
+  group('Settings volume slider widget', () {
+    testWidgets('shows volume slider when sound is enabled', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () => SettingsSheet.show(context),
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      // Sound is on by default, so slider should be visible
+      expect(find.byType(Slider), findsOneWidget);
+    });
+
+    testWidgets('hides volume slider when sound is disabled', (tester) async {
+      final settingsNotifier = GameSettingsNotifier();
+      settingsNotifier.toggleSound(); // disable sound
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            gameSettingsProvider.overrideWith((_) => settingsNotifier),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () => SettingsSheet.show(context),
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      // Sound is off, so slider should not be visible
+      expect(find.byType(Slider), findsNothing);
     });
   });
 }

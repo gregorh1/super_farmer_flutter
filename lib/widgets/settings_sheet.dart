@@ -66,6 +66,33 @@ class SettingsSheet extends ConsumerWidget {
                   ref.read(gameSettingsProvider.notifier).toggleSound(),
             ),
           ),
+
+          // Volume slider (only when sound is enabled)
+          if (settings.soundEnabled)
+            Padding(
+              padding: const EdgeInsets.only(left: 36, right: 8, bottom: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.volume_down,
+                      size: 18,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                  Expanded(
+                    child: Slider(
+                      value: settings.volume,
+                      min: 0.0,
+                      max: 1.0,
+                      divisions: 10,
+                      label: '${(settings.volume * 100).round()}%',
+                      onChanged: (val) =>
+                          ref.read(gameSettingsProvider.notifier).setVolume(val),
+                    ),
+                  ),
+                  Icon(Icons.volume_up,
+                      size: 18,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                ],
+              ),
+            ),
           const Divider(height: 1),
 
           // Animation speed

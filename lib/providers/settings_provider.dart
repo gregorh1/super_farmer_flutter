@@ -58,21 +58,25 @@ extension AnimationSpeedExtension on AnimationSpeed {
 class GameSettings {
   const GameSettings({
     this.soundEnabled = true,
+    this.volume = 0.7,
     this.animationSpeed = AnimationSpeed.normal,
     this.confirmEndTurn = false,
   });
 
   final bool soundEnabled;
+  final double volume;
   final AnimationSpeed animationSpeed;
   final bool confirmEndTurn;
 
   GameSettings copyWith({
     bool? soundEnabled,
+    double? volume,
     AnimationSpeed? animationSpeed,
     bool? confirmEndTurn,
   }) {
     return GameSettings(
       soundEnabled: soundEnabled ?? this.soundEnabled,
+      volume: volume ?? this.volume,
       animationSpeed: animationSpeed ?? this.animationSpeed,
       confirmEndTurn: confirmEndTurn ?? this.confirmEndTurn,
     );
@@ -84,6 +88,10 @@ class GameSettingsNotifier extends StateNotifier<GameSettings> {
 
   void toggleSound() {
     state = state.copyWith(soundEnabled: !state.soundEnabled);
+  }
+
+  void setVolume(double volume) {
+    state = state.copyWith(volume: volume.clamp(0.0, 1.0));
   }
 
   void setAnimationSpeed(AnimationSpeed speed) {
