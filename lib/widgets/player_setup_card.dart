@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/ai_difficulty.dart';
 import '../providers/settings_provider.dart';
 
 /// A card for configuring a single player's name and color.
@@ -11,6 +12,10 @@ class PlayerSetupCard extends StatelessWidget {
     required this.usedColorIndices,
     required this.onNameChanged,
     required this.onColorChanged,
+    this.isAi = false,
+    this.aiDifficulty = AiDifficulty.medium,
+    this.onAiChanged,
+    this.onAiDifficultyChanged,
   });
 
   final int playerIndex;
@@ -19,6 +24,10 @@ class PlayerSetupCard extends StatelessWidget {
   final Set<int> usedColorIndices;
   final ValueChanged<String> onNameChanged;
   final ValueChanged<int> onColorChanged;
+  final bool isAi;
+  final AiDifficulty aiDifficulty;
+  final ValueChanged<bool>? onAiChanged;
+  final ValueChanged<AiDifficulty>? onAiDifficultyChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -58,28 +67,113 @@ class PlayerSetupCard extends StatelessWidget {
                     ],
                   ),
                   child: Center(
-                    child: Text(
-                      '${playerIndex + 1}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                    child: Icon(
+                      isAi ? Icons.smart_toy : Icons.person,
+                      color: Colors.white,
+                      size: 18,
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'Player ${playerIndex + 1}',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: playerColor,
+                Expanded(
+                  child: Text(
+                    isAi ? 'AI Player ${playerIndex + 1}' : 'Player ${playerIndex + 1}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: playerColor,
+                    ),
                   ),
                 ),
+                // AI toggle
+                if (onAiChanged != null)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.smart_toy_outlined,
+                        size: 18,
+                        color: isAi
+                            ? playerColor
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                      const SizedBox(width: 4),
+                      SizedBox(
+                        height: 28,
+                        child: Switch(
+                          value: isAi,
+                          onChanged: onAiChanged,
+                          activeTrackColor: playerColor,
+                        ),
+                      ),
+                    ],
+                  ),
               ],
             ),
             const SizedBox(height: 12),
-            // Name input
+
+            // AI difficulty selector (shown when AI is enabled)
+            if (isAi && onAiDifficultyChanged != null) ...[
+              Row(
+                children: AiDifficulty.values.map((diff) {
+                  final isSelected = diff == aiDifficulty;
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: GestureDetector(
+                        onTap: () => onAiDifficultyChanged!(diff),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? playerColor
+                                : theme.colorScheme.surface,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSelected
+                                  ? playerColor
+                                  : theme.colorScheme.outline.withValues(alpha: 0.3),
+                              width: isSelected ? 2 : 1,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                diff.label,
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                diff.description,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  fontSize: 9,
+                                  color: isSelected
+                                      ? Colors.white.withValues(alpha: 0.8)
+                                      : theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.5),
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            // Name input (hidden for AI players)
+            if (!isAi)
             TextField(
               onChanged: onNameChanged,
               decoration: InputDecoration(

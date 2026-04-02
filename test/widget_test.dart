@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:super_farmer/main.dart';
+import 'package:super_farmer/models/ai_difficulty.dart';
+import 'package:super_farmer/models/ai_strategy.dart';
 import 'package:super_farmer/models/animal.dart';
 import 'package:super_farmer/models/dice.dart';
 import 'package:super_farmer/models/exchange.dart';
@@ -2290,6 +2292,533 @@ void _playerAreaAnimationTests() {
 
       // Drain animations
       await tester.pumpAndSettle();
+    });
+  });
+
+  // ===========================================================================
+  // AI Opponent tests
+  // ===========================================================================
+
+  group('AiDifficulty', () {
+    test('has three difficulty levels', () {
+      expect(AiDifficulty.values.length, 3);
+      expect(AiDifficulty.easy.label, 'Easy');
+      expect(AiDifficulty.medium.label, 'Medium');
+      expect(AiDifficulty.hard.label, 'Hard');
+    });
+
+    test('each difficulty has a description', () {
+      for (final diff in AiDifficulty.values) {
+        expect(diff.description, isNotEmpty);
+      }
+    });
+  });
+
+  group('AiStrategy', () {
+    test('easy AI returns empty or minimal trades', () {
+      final strategy = const AiStrategy(AiDifficulty.easy);
+      final player = PlayerHerd(
+        name: 'AI',
+        animals: {
+          Animal.rabbit: 2,
+          Animal.lamb: 0,
+          Animal.pig: 0,
+          Animal.cow: 0,
+          Animal.horse: 0,
+          Animal.smallDog: 0,
+          Animal.bigDog: 0,
+        },
+      );
+      final bank = GameState.initialBank();
+
+      // Easy AI with few animals should produce 0 or very few trades
+      final trades = strategy.decideTrades(player, bank);
+      // Easy AI never trades up, might buy a small dog randomly
+      expect(trades.length, lessThanOrEqualTo(1));
+    });
+
+    test('medium AI buys small dog when it has spare lambs', () {
+      final strategy = const AiStrategy(AiDifficulty.medium);
+      final player = PlayerHerd(
+        name: 'AI',
+        animals: {
+          Animal.rabbit: 10,
+          Animal.lamb: 3,
+          Animal.pig: 0,
+          Animal.cow: 0,
+          Animal.horse: 0,
+          Animal.smallDog: 0,
+          Animal.bigDog: 0,
+        },
+      );
+      final bank = GameState.initialBank();
+
+      final trades = strategy.decideTrades(player, bank);
+      // Should buy small dog (1 lamb for 1 small dog)
+      final dogTrades = trades.where((t) => t.to == Animal.smallDog).toList();
+      expect(dogTrades.length, 1);
+      expect(dogTrades[0].from, Animal.lamb);
+      expect(dogTrades[0].fromCount, 1);
+    });
+
+    test('medium AI buys big dog when it has spare cows', () {
+      final strategy = const AiStrategy(AiDifficulty.medium);
+      final player = PlayerHerd(
+        name: 'AI',
+        animals: {
+          Animal.rabbit: 5,
+          Animal.lamb: 2,
+          Animal.pig: 1,
+          Animal.cow: 2,
+          Animal.horse: 0,
+          Animal.smallDog: 1,
+          Animal.bigDog: 0,
+        },
+      );
+      final bank = GameState.initialBank();
+
+      final trades = strategy.decideTrades(player, bank);
+      final bigDogTrades = trades.where((t) => t.to == Animal.bigDog).toList();
+      expect(bigDogTrades.length, 1);
+      expect(bigDogTrades[0].from, Animal.cow);
+    });
+
+    test('medium AI trades up to fill gaps', () {
+      final strategy = const AiStrategy(AiDifficulty.medium);
+      final player = PlayerHerd(
+        name: 'AI',
+        animals: {
+          Animal.rabbit: 12,
+          Animal.lamb: 0,
+          Animal.pig: 0,
+          Animal.cow: 0,
+          Animal.horse: 0,
+          Animal.smallDog: 0,
+          Animal.bigDog: 0,
+        },
+      );
+      final bank = GameState.initialBank();
+
+      final trades = strategy.decideTrades(player, bank);
+      // Should trade 6 rabbits for 1 lamb (trade up)
+      final lambTrades = trades.where((t) => t.to == Animal.lamb).toList();
+      expect(lambTrades.isNotEmpty, true);
+    });
+
+    test('hard AI buys small dog when rabbits are valuable', () {
+      final strategy = const AiStrategy(AiDifficulty.hard);
+      final player = PlayerHerd(
+        name: 'AI',
+        animals: {
+          Animal.rabbit: 8,
+          Animal.lamb: 2,
+          Animal.pig: 0,
+          Animal.cow: 0,
+          Animal.horse: 0,
+          Animal.smallDog: 0,
+          Animal.bigDog: 0,
+        },
+      );
+      final bank = GameState.initialBank();
+
+      final trades = strategy.decideTrades(player, bank);
+      final dogTrades = trades.where((t) => t.to == Animal.smallDog).toList();
+      expect(dogTrades.length, 1);
+    });
+
+    test('hard AI buys big dog when opponents are close to winning', () {
+      final strategy = const AiStrategy(AiDifficulty.hard);
+      final player = PlayerHerd(
+        name: 'AI',
+        animals: {
+          Animal.rabbit: 3,
+          Animal.lamb: 1,
+          Animal.pig: 1,
+          Animal.cow: 1,
+          Animal.horse: 0,
+          Animal.smallDog: 0,
+          Animal.bigDog: 0,
+        },
+      );
+      final opponent = PlayerHerd(
+        name: 'Human',
+        animals: {
+          Animal.rabbit: 5,
+          Animal.lamb: 3,
+          Animal.pig: 2,
+          Animal.cow: 0,
+          Animal.horse: 0,
+          Animal.smallDog: 0,
+          Animal.bigDog: 0,
+        },
+      );
+      final bank = GameState.initialBank();
+
+      final trades = strategy.decideTrades(player, bank, [opponent]);
+      // Should buy big dog due to herd value
+      final bigDogTrades = trades.where((t) => t.to == Animal.bigDog).toList();
+      expect(bigDogTrades.length, 1);
+    });
+
+    test('hard AI trades aggressively towards highest missing animal', () {
+      final strategy = const AiStrategy(AiDifficulty.hard);
+      final player = PlayerHerd(
+        name: 'AI',
+        animals: {
+          Animal.rabbit: 20,
+          Animal.lamb: 1,
+          Animal.pig: 1,
+          Animal.cow: 1,
+          Animal.horse: 0,
+          Animal.smallDog: 0,
+          Animal.bigDog: 0,
+        },
+      );
+      final bank = GameState.initialBank();
+
+      final trades = strategy.decideTrades(player, bank);
+      // Should trade rabbits up towards horse
+      expect(trades.isNotEmpty, true);
+      // Should include rabbit->lamb trades
+      final rabbitTrades = trades.where((t) => t.from == Animal.rabbit).toList();
+      expect(rabbitTrades.isNotEmpty, true);
+    });
+
+    test('hard AI does not trade when it already has all animals', () {
+      final strategy = const AiStrategy(AiDifficulty.hard);
+      final player = PlayerHerd(
+        name: 'AI',
+        animals: {
+          Animal.rabbit: 5,
+          Animal.lamb: 2,
+          Animal.pig: 1,
+          Animal.cow: 1,
+          Animal.horse: 1,
+          Animal.smallDog: 1,
+          Animal.bigDog: 1,
+        },
+      );
+      final bank = GameState.initialBank();
+
+      final trades = strategy.decideTrades(player, bank);
+      // Already has everything, no need to trade up
+      // May still buy dogs but has them already
+      final upTrades = trades
+          .where((t) => t.to != Animal.smallDog && t.to != Animal.bigDog)
+          .toList();
+      expect(upTrades, isEmpty);
+    });
+  });
+
+  group('AI GameNotifier integration', () {
+    test('startGame creates AI players with correct properties', () {
+      final notifier = GameNotifier();
+      notifier.startGame(
+        ['Human', 'AI Bot'],
+        [const Color(0xFF2E7D32), const Color(0xFF1565C0)],
+        [false, true],
+        [null, AiDifficulty.hard],
+      );
+
+      expect(notifier.state.players[0].isAi, false);
+      expect(notifier.state.players[0].aiDifficulty, isNull);
+      expect(notifier.state.players[1].isAi, true);
+      expect(notifier.state.players[1].aiDifficulty, AiDifficulty.hard);
+      expect(notifier.state.players[1].name, 'AI Bot');
+    });
+
+    test('isCurrentPlayerAi detects AI turns', () {
+      final notifier = GameNotifier();
+      notifier.startGame(
+        ['Human', 'AI Bot'],
+        null,
+        [false, true],
+        [null, AiDifficulty.medium],
+      );
+
+      expect(notifier.state.isCurrentPlayerAi, false);
+      notifier.nextTurn();
+      expect(notifier.state.isCurrentPlayerAi, true);
+    });
+
+    test('computeAiTrades returns trades for AI player', () {
+      final notifier = GameNotifier();
+      notifier.startGame(
+        ['Human', 'AI Bot'],
+        null,
+        [false, true],
+        [null, AiDifficulty.medium],
+      );
+
+      // Move to AI turn
+      notifier.nextTurn();
+
+      // Give AI some animals to trade
+      _setPlayerAnimals(notifier, 1, {Animal.rabbit: 12, Animal.lamb: 3});
+
+      final trades = notifier.computeAiTrades();
+      expect(trades, isNotEmpty);
+    });
+
+    test('computeAiTrades returns empty for human player', () {
+      final notifier = GameNotifier();
+      notifier.startGame(['Human', 'AI Bot'], null, [false, true]);
+
+      // On human turn
+      final trades = notifier.computeAiTrades();
+      expect(trades, isEmpty);
+    });
+
+    test('setAiThinking updates state', () {
+      final notifier = GameNotifier();
+      notifier.startGame(['Human', 'AI Bot'], null, [false, true]);
+
+      expect(notifier.state.isAiThinking, false);
+      notifier.setAiThinking(true);
+      expect(notifier.state.isAiThinking, true);
+      notifier.setAiThinking(false);
+      expect(notifier.state.isAiThinking, false);
+    });
+
+    test('nextTurn clears AI state', () {
+      final notifier = GameNotifier();
+      notifier.startGame(['Human', 'AI Bot'], null, [false, true]);
+
+      notifier.setAiThinking(true);
+      notifier.setAiTradesMade([
+        const ExchangeRate(
+            from: Animal.rabbit, fromCount: 6, to: Animal.lamb, toCount: 1),
+      ]);
+
+      notifier.nextTurn();
+      expect(notifier.state.isAiThinking, false);
+      expect(notifier.state.aiTradesMade, isEmpty);
+    });
+
+    test('AI player defaults to medium difficulty when not specified', () {
+      final notifier = GameNotifier();
+      notifier.startGame(
+        ['Human', 'AI Bot'],
+        null,
+        [false, true],
+      );
+
+      expect(notifier.state.players[1].aiDifficulty, AiDifficulty.medium);
+    });
+  });
+
+  group('PlayerSetup AI configuration', () {
+    test('defaults to non-AI players', () {
+      const setup = PlayerSetup();
+      expect(setup.isAi[0], false);
+      expect(setup.isAi[1], false);
+    });
+
+    test('defaults AI difficulty to medium', () {
+      const setup = PlayerSetup();
+      expect(setup.aiDifficulties[0], AiDifficulty.medium);
+    });
+
+    test('displayName shows AI name when player is AI', () {
+      const setup = PlayerSetup(
+        isAi: [false, true, false, false],
+        aiDifficulties: [
+          AiDifficulty.medium,
+          AiDifficulty.hard,
+          AiDifficulty.medium,
+          AiDifficulty.medium,
+        ],
+      );
+      expect(setup.displayName(0), 'Player 1');
+      expect(setup.displayName(1), 'AI 2 (Hard)');
+    });
+
+    test('displayName uses custom name over AI default', () {
+      const setup = PlayerSetup(
+        playerNames: ['', 'Skynet', '', ''],
+        isAi: [false, true, false, false],
+      );
+      expect(setup.displayName(1), 'Skynet');
+    });
+
+    test('PlayerSetupNotifier sets AI flag', () {
+      final notifier = PlayerSetupNotifier();
+      notifier.setIsAi(1, true);
+      expect(notifier.state.isAi[1], true);
+      expect(notifier.state.isAi[0], false);
+    });
+
+    test('PlayerSetupNotifier sets AI difficulty', () {
+      final notifier = PlayerSetupNotifier();
+      notifier.setAiDifficulty(2, AiDifficulty.hard);
+      expect(notifier.state.aiDifficulties[2], AiDifficulty.hard);
+    });
+  });
+
+  group('AI PlayerSetupCard widget', () {
+    testWidgets('shows AI toggle switch', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: PlayerSetupCard(
+              playerIndex: 0,
+              name: '',
+              selectedColorIndex: 0,
+              usedColorIndices: const {},
+              onNameChanged: (_) {},
+              onColorChanged: (_) {},
+              isAi: false,
+              onAiChanged: (_) {},
+              onAiDifficultyChanged: (_) {},
+            ),
+          ),
+        ),
+      ));
+
+      expect(find.byType(Switch), findsOneWidget);
+      expect(find.byIcon(Icons.smart_toy_outlined), findsOneWidget);
+    });
+
+    testWidgets('shows difficulty selector when AI enabled', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: PlayerSetupCard(
+              playerIndex: 0,
+              name: '',
+              selectedColorIndex: 0,
+              usedColorIndices: const {},
+              onNameChanged: (_) {},
+              onColorChanged: (_) {},
+              isAi: true,
+              aiDifficulty: AiDifficulty.medium,
+              onAiChanged: (_) {},
+              onAiDifficultyChanged: (_) {},
+            ),
+          ),
+        ),
+      ));
+
+      // Should show all three difficulty options
+      expect(find.text('Easy'), findsOneWidget);
+      expect(find.text('Medium'), findsOneWidget);
+      expect(find.text('Hard'), findsOneWidget);
+    });
+
+    testWidgets('hides name input when AI enabled', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: PlayerSetupCard(
+              playerIndex: 0,
+              name: '',
+              selectedColorIndex: 0,
+              usedColorIndices: const {},
+              onNameChanged: (_) {},
+              onColorChanged: (_) {},
+              isAi: true,
+              onAiChanged: (_) {},
+              onAiDifficultyChanged: (_) {},
+            ),
+          ),
+        ),
+      ));
+
+      // TextField for name should not be visible when AI is enabled
+      expect(find.byType(TextField), findsNothing);
+    });
+
+    testWidgets('shows AI icon in header when AI enabled', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: PlayerSetupCard(
+              playerIndex: 0,
+              name: '',
+              selectedColorIndex: 0,
+              usedColorIndices: const {},
+              onNameChanged: (_) {},
+              onColorChanged: (_) {},
+              isAi: true,
+              onAiChanged: (_) {},
+              onAiDifficultyChanged: (_) {},
+            ),
+          ),
+        ),
+      ));
+
+      // Should show smart_toy icon and "AI Player 1" text
+      expect(find.byIcon(Icons.smart_toy), findsAtLeast(1));
+      expect(find.text('AI Player 1'), findsOneWidget);
+    });
+  });
+
+  group('DiceCenter AI turn', () {
+    testWidgets('disables roll button when AI turn', (tester) async {
+      final game = GameState(
+        players: [
+          PlayerHerd(
+            name: 'AI Bot',
+            isAi: true,
+            aiDifficulty: AiDifficulty.medium,
+            animals: {for (final a in Animal.values) a: 0},
+          ),
+        ],
+        currentPlayerIndex: 0,
+        isStarted: true,
+        bank: GameState.initialBank(),
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: DiceCenter(
+            gameState: game,
+            onRoll: () {},
+            onEndTurn: () {},
+            isAiTurn: true,
+          ),
+        ),
+      ));
+
+      // Roll button should be present but disabled
+      final rollButton = find.widgetWithText(FilledButton, 'Roll Dice');
+      expect(rollButton, findsOneWidget);
+      final button = tester.widget<FilledButton>(rollButton);
+      expect(button.onPressed, isNull);
+    });
+
+    testWidgets('shows AI thinking indicator', (tester) async {
+      final game = GameState(
+        players: [
+          PlayerHerd(
+            name: 'AI Bot',
+            isAi: true,
+            aiDifficulty: AiDifficulty.medium,
+            animals: {for (final a in Animal.values) a: 0},
+          ),
+        ],
+        currentPlayerIndex: 0,
+        isStarted: true,
+        bank: GameState.initialBank(),
+        isAiThinking: true,
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: DiceCenter(
+            gameState: game,
+            onRoll: () {},
+            onEndTurn: () {},
+            isAiTurn: true,
+          ),
+        ),
+      ));
+
+      await tester.pump();
+
+      // Should show "Thinking" text
+      expect(find.text('Thinking'), findsOneWidget);
+      expect(find.byIcon(Icons.smart_toy), findsAtLeast(1));
     });
   });
 }

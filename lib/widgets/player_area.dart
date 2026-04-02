@@ -14,6 +14,7 @@ class PlayerArea extends StatefulWidget {
     required this.isCurrentPlayer,
     required this.gameState,
     required this.onTrade,
+    this.isAiTurn = false,
   });
 
   final PlayerHerd player;
@@ -21,6 +22,7 @@ class PlayerArea extends StatefulWidget {
   final bool isCurrentPlayer;
   final GameState gameState;
   final void Function(ExchangeRate rate) onTrade;
+  final bool isAiTurn;
 
   static const farmAnimals = [
     Animal.rabbit,
@@ -384,10 +386,12 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
     );
 
     final canTradeUp = widget.isCurrentPlayer &&
+        !widget.isAiTurn &&
         widget.player.countOf(lowerAnimal) >= forwardRate.fromCount &&
         (widget.gameState.bank[higherAnimal] ?? 0) >= 1;
 
     final canTradeDown = widget.isCurrentPlayer &&
+        !widget.isAiTurn &&
         widget.player.countOf(higherAnimal) >= 1 &&
         (widget.gameState.bank[lowerAnimal] ?? 0) >= rate;
 
@@ -446,10 +450,12 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
 
   Widget _buildDogRow(Color color, ThemeData theme) {
     final canBuySmallDog = widget.isCurrentPlayer &&
+        !widget.isAiTurn &&
         widget.player.countOf(Animal.lamb) >= 1 &&
         (widget.gameState.bank[Animal.smallDog] ?? 0) >= 1;
 
     final canBuyBigDog = widget.isCurrentPlayer &&
+        !widget.isAiTurn &&
         widget.player.countOf(Animal.cow) >= 1 &&
         (widget.gameState.bank[Animal.bigDog] ?? 0) >= 1;
 

@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/ai_difficulty.dart';
+import '../models/ai_strategy.dart';
 import '../models/animal.dart';
 import '../models/dice.dart';
 import '../models/exchange.dart';
@@ -32,17 +34,31 @@ class PlayerHerd {
     this.animals = const {},
     this.name = '',
     this.color = const Color(0xFF2E7D32),
+    this.isAi = false,
+    this.aiDifficulty,
   });
 
   final Map<Animal, int> animals;
   final String name;
   final Color color;
+  final bool isAi;
+  final AiDifficulty? aiDifficulty;
 
-  PlayerHerd copyWith({Map<Animal, int>? animals, String? name, Color? color}) {
+  PlayerHerd copyWith({
+    Map<Animal, int>? animals,
+    String? name,
+    Color? color,
+    bool? isAi,
+    AiDifficulty? aiDifficulty,
+    bool clearAiDifficulty = false,
+  }) {
     return PlayerHerd(
       animals: animals ?? this.animals,
       name: name ?? this.name,
       color: color ?? this.color,
+      isAi: isAi ?? this.isAi,
+      aiDifficulty:
+          clearAiDifficulty ? null : (aiDifficulty ?? this.aiDifficulty),
     );
   }
 
@@ -62,6 +78,8 @@ class GameState {
     this.lastRoll,
     this.lastEvent,
     this.winner,
+    this.isAiThinking = false,
+    this.aiTradesMade = const [],
   });
 
   final List<PlayerHerd> players;
@@ -71,9 +89,14 @@ class GameState {
   final DiceRollResult? lastRoll;
   final TurnEvent? lastEvent;
   final String? winner;
+  final bool isAiThinking;
+  final List<ExchangeRate> aiTradesMade;
 
   PlayerHerd? get currentPlayer =>
       players.isEmpty ? null : players[currentPlayerIndex];
+
+  bool get isCurrentPlayerAi =>
+      currentPlayer != null && currentPlayer!.isAi;
 
   GameState copyWith({
     List<PlayerHerd>? players,
@@ -86,6 +109,8 @@ class GameState {
     bool clearLastEvent = false,
     String? winner,
     bool clearWinner = false,
+    bool? isAiThinking,
+    List<ExchangeRate>? aiTradesMade,
   }) {
     return GameState(
       players: players ?? this.players,
@@ -95,6 +120,8 @@ class GameState {
       lastRoll: clearLastRoll ? null : (lastRoll ?? this.lastRoll),
       lastEvent: clearLastEvent ? null : (lastEvent ?? this.lastEvent),
       winner: clearWinner ? null : (winner ?? this.winner),
+      isAiThinking: isAiThinking ?? this.isAiThinking,
+      aiTradesMade: aiTradesMade ?? this.aiTradesMade,
     );
   }
 
@@ -114,15 +141,25 @@ class GameNotifier extends StateNotifier<GameState> {
 
   final Random? _random;
 
-  void startGame(List<String> playerNames, [List<Color>? playerColors]) {
+  void startGame(
+    List<String> playerNames, [
+    List<Color>? playerColors,
+    List<bool>? isAiList,
+    List<AiDifficulty?>? aiDifficulties,
+  ]) {
     state = GameState(
       players: List.generate(playerNames.length, (i) {
+        final isAi = isAiList != null && i < isAiList.length && isAiList[i];
         return PlayerHerd(
           name: playerNames[i],
           color: playerColors != null && i < playerColors.length
               ? playerColors[i]
               : const Color(0xFF2E7D32),
           animals: {for (final a in Animal.values) a: 0},
+          isAi: isAi,
+          aiDifficulty: isAi && aiDifficulties != null && i < aiDifficulties.length
+              ? aiDifficulties[i]
+              : (isAi ? AiDifficulty.medium : null),
         );
       }),
       currentPlayerIndex: 0,
@@ -142,7 +179,34 @@ class GameNotifier extends StateNotifier<GameState> {
           (state.currentPlayerIndex + 1) % state.players.length,
       clearLastRoll: true,
       clearLastEvent: true,
+      isAiThinking: false,
+      aiTradesMade: const [],
     );
+  }
+
+  /// Marks the current AI player as "thinking" (for UI indicator).
+  void setAiThinking(bool thinking) {
+    state = state.copyWith(isAiThinking: thinking);
+  }
+
+  /// Computes AI trades for the current player and returns them.
+  /// Does not execute them — the UI should call [trade] with delays.
+  List<ExchangeRate> computeAiTrades() {
+    final player = state.currentPlayer;
+    if (player == null || !player.isAi || player.aiDifficulty == null) {
+      return [];
+    }
+    final strategy = AiStrategy(player.aiDifficulty!);
+    final opponents = <PlayerHerd>[];
+    for (int i = 0; i < state.players.length; i++) {
+      if (i != state.currentPlayerIndex) opponents.add(state.players[i]);
+    }
+    return strategy.decideTrades(player, state.bank, opponents);
+  }
+
+  /// Records the trades an AI made (for display).
+  void setAiTradesMade(List<ExchangeRate> trades) {
+    state = state.copyWith(aiTradesMade: trades);
   }
 
   /// Rolls dice, applies breeding, then applies predator attacks.

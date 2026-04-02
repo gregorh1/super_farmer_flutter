@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/ai_difficulty.dart';
 
 /// Available player colors for selection.
 class PlayerColor {
@@ -105,27 +106,46 @@ class PlayerSetup {
     this.playerCount = 4,
     this.playerNames = const ['', '', '', ''],
     this.playerColorIndices = const [0, 1, 2, 3],
+    this.isAi = const [false, false, false, false],
+    this.aiDifficulties = const [
+      AiDifficulty.medium,
+      AiDifficulty.medium,
+      AiDifficulty.medium,
+      AiDifficulty.medium,
+    ],
   });
 
   final int playerCount;
   final List<String> playerNames;
   final List<int> playerColorIndices;
+  final List<bool> isAi;
+  final List<AiDifficulty> aiDifficulties;
 
   PlayerSetup copyWith({
     int? playerCount,
     List<String>? playerNames,
     List<int>? playerColorIndices,
+    List<bool>? isAi,
+    List<AiDifficulty>? aiDifficulties,
   }) {
     return PlayerSetup(
       playerCount: playerCount ?? this.playerCount,
       playerNames: playerNames ?? this.playerNames,
       playerColorIndices: playerColorIndices ?? this.playerColorIndices,
+      isAi: isAi ?? this.isAi,
+      aiDifficulties: aiDifficulties ?? this.aiDifficulties,
     );
   }
 
   String displayName(int index) {
     if (index < playerNames.length && playerNames[index].isNotEmpty) {
       return playerNames[index];
+    }
+    if (index < isAi.length && isAi[index]) {
+      final diff = index < aiDifficulties.length
+          ? aiDifficulties[index]
+          : AiDifficulty.medium;
+      return 'AI ${index + 1} (${diff.label})';
     }
     return 'Player ${index + 1}';
   }
@@ -163,6 +183,24 @@ class PlayerSetupNotifier extends StateNotifier<PlayerSetup> {
     }
     indices[playerIndex] = colorIndex;
     state = state.copyWith(playerColorIndices: indices);
+  }
+
+  void setIsAi(int index, bool value) {
+    final list = List<bool>.from(state.isAi);
+    while (list.length <= index) {
+      list.add(false);
+    }
+    list[index] = value;
+    state = state.copyWith(isAi: list);
+  }
+
+  void setAiDifficulty(int index, AiDifficulty difficulty) {
+    final list = List<AiDifficulty>.from(state.aiDifficulties);
+    while (list.length <= index) {
+      list.add(AiDifficulty.medium);
+    }
+    list[index] = difficulty;
+    state = state.copyWith(aiDifficulties: list);
   }
 
   void reset() {
