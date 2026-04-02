@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../models/animal.dart';
 import '../models/dice.dart';
 import '../providers/game_provider.dart';
+import 'farm_decorations.dart';
 
 class DiceCenter extends StatefulWidget {
   const DiceCenter({
@@ -151,12 +152,31 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
     final currentPlayer = widget.gameState.currentPlayer!;
     final playerColor = currentPlayer.color;
 
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Column(
+    return WoodenFrame(
+      borderWidth: 4.0,
+      cornerRadius: 20,
+      child: Card(
+        elevation: 4,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Stack(
+          children: [
+            // Hay texture at bottom of card
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 10,
+              child: CustomPaint(
+                painter: HayTexturePainter(
+                  color: const Color(0xFFDCE775),
+                  seed: 13,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -274,6 +294,9 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
           ],
         ),
       ),
