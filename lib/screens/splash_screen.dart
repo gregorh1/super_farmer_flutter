@@ -99,16 +99,27 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Barn + animal icon
+                    // Farm icon with barn and bobbing rabbit
                     SizedBox(
-                      width: 120,
-                      height: 120,
+                      width: 140,
+                      height: 140,
                       child: Stack(
+                        alignment: Alignment.center,
                         children: [
                           // Barn background
                           CustomPaint(
-                            size: const Size(120, 120),
+                            size: const Size(140, 140),
                             painter: BarnPainter(),
+                          ),
+                          // Agriculture icon overlay
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Icon(
+                              Icons.agriculture,
+                              size: 32,
+                              color: Colors.white.withValues(alpha: 0.85),
+                            ),
                           ),
                           // Bobbing rabbit in front of the barn
                           Positioned(
@@ -128,8 +139,8 @@ class _SplashScreenState extends State<SplashScreen>
                               },
                               child: Center(
                                 child: SizedBox(
-                                  width: 44,
-                                  height: 44,
+                                  width: 48,
+                                  height: 48,
                                   child: SvgPicture.asset(
                                     'assets/images/rabbit.svg',
                                     fit: BoxFit.contain,

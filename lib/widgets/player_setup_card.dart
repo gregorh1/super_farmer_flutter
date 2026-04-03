@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/ai_difficulty.dart';
 import '../providers/settings_provider.dart';
+import 'premium_upgrade_dialog.dart';
 
 /// A card for configuring a single player's name and color.
 class PlayerSetupCard extends StatelessWidget {
@@ -17,6 +18,7 @@ class PlayerSetupCard extends StatelessWidget {
     this.aiDifficulty = AiDifficulty.medium,
     this.onAiChanged,
     this.onAiDifficultyChanged,
+    this.isPremium = false,
   });
 
   final int playerIndex;
@@ -29,6 +31,7 @@ class PlayerSetupCard extends StatelessWidget {
   final AiDifficulty aiDifficulty;
   final ValueChanged<bool>? onAiChanged;
   final ValueChanged<AiDifficulty>? onAiDifficultyChanged;
+  final bool isPremium;
 
   @override
   Widget build(BuildContext context) {
@@ -135,14 +138,21 @@ class PlayerSetupCard extends StatelessWidget {
               Row(
                 children: AiDifficulty.values.map((diff) {
                   final isSelected = diff == aiDifficulty;
+                  final isLockedDiff = !isPremium && diff != AiDifficulty.easy;
                   return Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 3),
                       child: GestureDetector(
-                        onTap: () => onAiDifficultyChanged!(diff),
+                        onTap: () {
+                          if (isLockedDiff) {
+                            showPremiumRequiredDialog(context);
+                          } else {
+                            onAiDifficultyChanged!(diff);
+                          }
+                        },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? playerColor
@@ -157,27 +167,50 @@ class PlayerSetupCard extends StatelessWidget {
                           ),
                           child: Column(
                             children: [
-                              Text(
-                                aiDiffLabel(diff),
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : theme.colorScheme.onSurface,
-                                ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      aiDiffLabel(diff),
+                                      style: theme.textTheme.labelMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : isLockedDiff
+                                                ? theme.colorScheme.onSurface
+                                                    .withValues(alpha: isDark ? 0.6 : 0.4)
+                                                : theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isLockedDiff)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 3),
+                                      child: Icon(
+                                        Icons.lock,
+                                        size: 12,
+                                        color: Colors.amber.shade700,
+                                      ),
+                                    ),
+                                ],
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 aiDiffDesc(diff),
                                 style: theme.textTheme.labelSmall?.copyWith(
-                                  fontSize: 9,
+                                  fontSize: 10,
                                   color: isSelected
                                       ? Colors.white.withValues(alpha: 0.8)
-                                      : theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.5),
+                                      : isLockedDiff
+                                          ? theme.colorScheme.onSurface
+                                              .withValues(alpha: isDark ? 0.5 : 0.3)
+                                          : theme.colorScheme.onSurface
+                                              .withValues(alpha: isDark ? 0.7 : 0.5),
                                 ),
                                 textAlign: TextAlign.center,
-                                maxLines: 2,
+                                maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],

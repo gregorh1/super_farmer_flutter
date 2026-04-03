@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'l10n/app_localizations.dart';
 import 'providers/settings_provider.dart';
 import 'router.dart';
@@ -7,6 +8,8 @@ import 'screens/splash_screen.dart';
 import 'theme.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
   runApp(const ProviderScope(child: SuperFarmerApp()));
 }
 

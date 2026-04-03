@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../l10n/app_localizations.dart';
 import '../models/animal.dart';
+import '../providers/premium_provider.dart';
 import '../widgets/animal_card.dart';
 import '../widgets/settings_sheet.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final isPremium = ref.watch(isPremiumProvider);
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.appTitle),
@@ -90,6 +93,8 @@ class HomeScreen extends StatelessWidget {
                       ))
                   .toList(),
             ),
+            // Bottom padding so content doesn't hide behind pinned banner
+            if (!isPremium) const SizedBox(height: 72),
           ],
         ),
       ),

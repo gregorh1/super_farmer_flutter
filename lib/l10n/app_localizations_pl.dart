@@ -673,4 +673,70 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get navStats => 'Statystyki';
+
+  @override
+  String get premium => 'Premium';
+
+  @override
+  String get premiumUnlock => 'Odblokuj Premium';
+
+  @override
+  String get premiumDescription => 'Poczuj pelny Superfarmer!';
+
+  @override
+  String get premiumFeature3to4Players => 'Tryb 3-4 graczy';
+
+  @override
+  String get premiumFeatureAllAi => 'Wszystkie poziomy AI';
+
+  @override
+  String get premiumFeatureAllThemes => 'Wszystkie motywy i odblokowania';
+
+  @override
+  String get premiumFeatureStatistics => 'Statystyki i powtorki';
+
+  @override
+  String get premiumFeatureAdFree => 'Bez reklam';
+
+  @override
+  String get premiumPrice => '3,99 zl jednorazowo';
+
+  @override
+  String get premiumBuy => 'Kup Premium — 3,99 zl';
+
+  @override
+  String get premiumRestore => 'Przywroc Zakup';
+
+  @override
+  String get premiumAlreadyUnlocked => 'Premium juz odblokowany!';
+
+  @override
+  String get premiumPurchaseSuccess =>
+      'Premium odblokowany! Ciesz sie pelnym doswiadczeniem.';
+
+  @override
+  String get premiumPurchaseError => 'Zakup nie powiodl sie. Sprobuj ponownie.';
+
+  @override
+  String get premiumRequired => 'Wymagany Premium';
+
+  @override
+  String get premiumRequiredMessage =>
+      'Ta funkcja wymaga Premium. Uaktualnij, aby odblokowac wszystkie funkcje!';
+
+  @override
+  String get upgrade => 'Uaktualnij';
+
+  @override
+  String get removeAds => 'Usun Reklamy';
+
+  @override
+  String get adsRemovedWith => 'Reklamy usuniete z Premium';
+
+  @override
+  String get freeFeatures =>
+      'Darmowe funkcje: tryb 2-osobowy, latwy AI, podstawowy motyw';
+
+  @override
+  String get watchAdForHint => 'Wyswietlanie krotklej reklamy...';
 }

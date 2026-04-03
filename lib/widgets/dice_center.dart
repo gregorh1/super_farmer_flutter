@@ -280,20 +280,29 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 8),
 
-            // End turn button
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: OutlinedButton.icon(
-                onPressed: _canEndTurn ? widget.onEndTurn : null,
-                icon: const Icon(Icons.skip_next, size: 22),
-                label: Text(l10n.endTurn, style: const TextStyle(fontSize: 16)),
-                style: OutlinedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+            // End turn button — grayed out with low opacity when disabled
+            Opacity(
+              opacity: _canEndTurn ? 1.0 : 0.35,
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: _canEndTurn ? widget.onEndTurn : null,
+                  icon: const Icon(Icons.skip_next, size: 22),
+                  label: Text(l10n.endTurn, style: const TextStyle(fontSize: 16)),
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    disabledForegroundColor: theme.colorScheme.onSurface
+                        .withValues(alpha: 0.4),
+                    disabledMouseCursor: SystemMouseCursors.forbidden,
+                    side: _canEndTurn
+                        ? null
+                        : BorderSide(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
+                          ),
                   ),
-                  disabledForegroundColor: theme.colorScheme.onSurface
-                      .withValues(alpha: theme.brightness == Brightness.dark ? 0.6 : 0.5),
                 ),
               ),
             ),
@@ -380,7 +389,7 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
       parts.add(Text(
         l10n.noMatch,
         style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          color: theme.colorScheme.onSurface.withValues(alpha: theme.brightness == Brightness.dark ? 0.75 : 0.6),
         ),
       ));
     }

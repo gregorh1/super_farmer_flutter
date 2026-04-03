@@ -9,9 +9,22 @@ import 'package:super_farmer/models/animal.dart';
 import 'package:super_farmer/models/dice.dart';
 import 'package:super_farmer/providers/achievement_provider.dart';
 import 'package:super_farmer/providers/game_provider.dart';
+import 'package:super_farmer/providers/premium_provider.dart';
 import 'package:super_farmer/screens/achievements_screen.dart';
 import 'package:super_farmer/l10n/app_localizations.dart';
 import 'package:super_farmer/screens/stats_screen.dart';
+
+/// A PremiumNotifier that starts as premium immediately (no async).
+class _TestPremiumNotifier extends PremiumNotifier {
+  _TestPremiumNotifier() {
+    state = const PremiumState(isPremium: true, isLoaded: true);
+  }
+}
+
+/// Premium overrides to bypass premium gate in widget tests.
+final _premiumOverrides = [
+  premiumProvider.overrideWith((ref) => _TestPremiumNotifier()),
+];
 
 /// A fixed Random that always returns a specific sequence index.
 class FixedRandom implements Random {
@@ -401,12 +414,13 @@ void main() {
 
   group('AchievementsScreen widget', () {
     setUp(() {
-      SharedPreferences.setMockInitialValues({});
+      SharedPreferences.setMockInitialValues({'is_premium': true});
     });
 
     testWidgets('shows first achievements and progress header', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
+          overrides: _premiumOverrides,
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
@@ -431,6 +445,7 @@ void main() {
         (tester) async {
       await tester.pumpWidget(
         ProviderScope(
+          overrides: _premiumOverrides,
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
@@ -450,6 +465,7 @@ void main() {
     testWidgets('shows unlocked count text', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
+          overrides: _premiumOverrides,
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
@@ -466,6 +482,7 @@ void main() {
     testWidgets('can scroll to see more achievements', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
+          overrides: _premiumOverrides,
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
@@ -489,6 +506,7 @@ void main() {
         (tester) async {
       await tester.pumpWidget(
         ProviderScope(
+          overrides: _premiumOverrides,
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
@@ -509,7 +527,7 @@ void main() {
     });
 
     testWidgets('unlocked achievement shows correct icon', (tester) async {
-      SharedPreferences.setMockInitialValues({});
+      SharedPreferences.setMockInitialValues({'is_premium': true});
 
       final container = ProviderContainer();
       container
@@ -540,12 +558,13 @@ void main() {
 
   group('Stats screen Achievements tab', () {
     setUp(() {
-      SharedPreferences.setMockInitialValues({});
+      SharedPreferences.setMockInitialValues({'is_premium': true});
     });
 
     testWidgets('Achievements tab exists in stats screen', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
+          overrides: _premiumOverrides,
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
@@ -562,6 +581,7 @@ void main() {
     testWidgets('Achievements tab shows achievement list', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
+          overrides: _premiumOverrides,
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,

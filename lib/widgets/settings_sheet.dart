@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/app_localizations.dart';
+import '../providers/premium_provider.dart';
 import '../providers/settings_provider.dart';
+import 'premium_upgrade_dialog.dart';
 import 'tutorial_carousel.dart';
 
 /// Bottom sheet for in-game settings.
@@ -88,6 +90,31 @@ class SettingsSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
 
+          // Premium upgrade tile
+          if (!ref.watch(isPremiumProvider))
+            Column(
+              children: [
+                _SettingsTile(
+                  icon: Icons.star,
+                  title: l10n.premiumUnlock,
+                  subtitle: l10n.premiumPrice,
+                  trailing: FilledButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      showPremiumUpgradeDialog(context);
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.amber.shade700,
+                      visualDensity: VisualDensity.compact,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(l10n.upgrade, style: const TextStyle(fontSize: 12)),
+                  ),
+                ),
+                const Divider(height: 1),
+              ],
+            ),
+
           // Language selector
           _SettingsTile(
             icon: ref.watch(languageProvider).icon,
@@ -127,6 +154,11 @@ class SettingsSheet extends ConsumerWidget {
               }).toList(),
               selected: {ref.watch(themeProvider)},
               onSelectionChanged: (selected) {
+                final isPremium = ref.read(isPremiumProvider);
+                if (!isPremium && selected.first == ThemePreference.dark) {
+                  showPremiumRequiredDialog(context);
+                  return;
+                }
                 ref.read(themeProvider.notifier).setTheme(selected.first);
               },
               style: ButtonStyle(
@@ -159,7 +191,7 @@ class SettingsSheet extends ConsumerWidget {
                 children: [
                   Icon(Icons.volume_down,
                       size: 18,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                      color: theme.colorScheme.onSurface.withValues(alpha: theme.brightness == Brightness.dark ? 0.7 : 0.5)),
                   Expanded(
                     child: Slider(
                       value: settings.volume,
@@ -173,7 +205,7 @@ class SettingsSheet extends ConsumerWidget {
                   ),
                   Icon(Icons.volume_up,
                       size: 18,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                      color: theme.colorScheme.onSurface.withValues(alpha: theme.brightness == Brightness.dark ? 0.7 : 0.5)),
                 ],
               ),
             ),

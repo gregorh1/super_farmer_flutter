@@ -28,9 +28,22 @@ import 'package:super_farmer/screens/stats_screen.dart';
 import 'package:super_farmer/models/achievement.dart';
 import 'package:super_farmer/providers/achievement_provider.dart';
 import 'package:super_farmer/screens/achievements_screen.dart';
+import 'package:super_farmer/providers/premium_provider.dart';
 import 'package:super_farmer/services/audio_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:super_farmer/l10n/app_localizations.dart';
+
+/// A PremiumNotifier that starts as premium immediately (no async).
+class _TestPremiumNotifier extends PremiumNotifier {
+  _TestPremiumNotifier() {
+    state = const PremiumState(isPremium: true, isLoaded: true);
+  }
+}
+
+/// Premium overrides to bypass premium gate in widget tests.
+final _premiumOverrides = [
+  premiumProvider.overrideWith((ref) => _TestPremiumNotifier()),
+];
 
 /// A fixed Random that always returns a specific sequence index.
 class FixedRandom implements Random {
@@ -3327,6 +3340,7 @@ void _playerAreaAnimationTests() {
     testWidgets('shows empty state when no records', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
+          overrides: _premiumOverrides,
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
@@ -3356,6 +3370,7 @@ void _playerAreaAnimationTests() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            ..._premiumOverrides,
             statsProvider.overrideWith((ref) {
               final notifier = StatsNotifier();
               // Directly set state for testing
@@ -3402,6 +3417,7 @@ void _playerAreaAnimationTests() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            ..._premiumOverrides,
             statsProvider.overrideWith((ref) {
               final notifier = StatsNotifier();
               notifier.state = records;
@@ -3440,6 +3456,7 @@ void _playerAreaAnimationTests() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            ..._premiumOverrides,
             statsProvider.overrideWith((ref) {
               final notifier = StatsNotifier();
               notifier.state = records;
@@ -3464,7 +3481,12 @@ void _playerAreaAnimationTests() {
     });
 
     testWidgets('navigates to stats screen via bottom nav', (tester) async {
-      await tester.pumpWidget(const ProviderScope(child: SuperFarmerApp()));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: _premiumOverrides,
+          child: const SuperFarmerApp(),
+        ),
+      );
       await tester.pump(const Duration(seconds: 4));
       await tester.pumpAndSettle();
 

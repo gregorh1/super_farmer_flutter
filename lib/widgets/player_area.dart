@@ -194,15 +194,16 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
                     color: widget.isCurrentPlayer
                         ? color.withValues(alpha: 0.08)
                         : theme.colorScheme.surface,
-                    boxShadow: widget.isCurrentPlayer
-                        ? [
-                            BoxShadow(
-                              color: color.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              spreadRadius: 1,
-                            ),
-                          ]
-                        : null,
+                    boxShadow: [
+                      BoxShadow(
+                        color: widget.isCurrentPlayer
+                            ? color.withValues(alpha: 0.3)
+                            : Colors.black.withValues(alpha: 0.08),
+                        blurRadius: widget.isCurrentPlayer ? 8 : 4,
+                        spreadRadius: widget.isCurrentPlayer ? 1 : 0,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   clipBehavior: Clip.hardEdge,
                   child: Stack(
@@ -459,7 +460,9 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: color,
+                  color: theme.brightness == Brightness.dark
+                      ? const Color(0xFFB0D8B0)
+                      : color,
                 ),
               ),
             ),

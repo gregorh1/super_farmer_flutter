@@ -34,6 +34,7 @@ class SuperFarmerTheme {
     tertiary: _moonlitBlue,
     surface: _nightCard,
     onSurface: const Color(0xFFD5DDD5),
+    onSurfaceVariant: const Color(0xFFB0B8B0), // ≥ #9E9E9E for secondary text
     onPrimary: Colors.white,
     brightness: Brightness.dark,
   );
