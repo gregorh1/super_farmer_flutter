@@ -30,6 +30,7 @@ import 'package:super_farmer/providers/achievement_provider.dart';
 import 'package:super_farmer/screens/achievements_screen.dart';
 import 'package:super_farmer/services/audio_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:super_farmer/l10n/app_localizations.dart';
 
 /// A fixed Random that always returns a specific sequence index.
 class FixedRandom implements Random {
@@ -115,6 +116,9 @@ void main() {
     testWidgets('displays app name and barn branding', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: SplashScreen(onComplete: () {}),
         ),
       );
@@ -134,6 +138,9 @@ void main() {
       bool completed = false;
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: SplashScreen(onComplete: () => completed = true),
         ),
       );
@@ -147,6 +154,9 @@ void main() {
     testWidgets('has green background', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           theme: SuperFarmerTheme.lightTheme,
           home: SplashScreen(onComplete: () {}),
         ),
@@ -841,6 +851,9 @@ void main() {
             bank: GameState.initialBank(),
           );
       return MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: PlayerArea(
             player: state.players.isNotEmpty
@@ -972,6 +985,9 @@ void main() {
             bank: GameState.initialBank(),
           );
       return MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: DiceCenter(
             gameState: state,
@@ -1064,7 +1080,11 @@ void main() {
     Widget buildGameScreen({List<Override>? overrides}) {
       return ProviderScope(
         overrides: overrides ?? [],
-        child: const MaterialApp(home: GameScreen()),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
+          home: GameScreen()),
       );
     }
 
@@ -1698,6 +1718,9 @@ void _diceAnimationTests() {
             bank: GameState.initialBank(),
           );
       return MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: DiceCenter(
             gameState: state,
@@ -1771,7 +1794,10 @@ void _diceAnimationTests() {
 void _tutorialCarouselTests() {
   group('TutorialCarousel', () {
     Widget buildCarousel() {
-      return const MaterialApp(
+      return MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: TutorialCarousel(),
       );
     }
@@ -2020,6 +2046,9 @@ void _tutorialCarouselTests() {
     testWidgets('TutorialCarousel.show opens as a route', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Builder(
             builder: (context) => Scaffold(
               body: ElevatedButton(
@@ -2047,7 +2076,11 @@ void _rulesScreenTests() {
   group('RulesScreen', () {
     testWidgets('shows interactive tutorial card', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(home: RulesScreen()),
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
+          home: RulesScreen()),
       );
       await tester.pumpAndSettle();
 
@@ -2057,7 +2090,11 @@ void _rulesScreenTests() {
 
     testWidgets('shows quick reference section', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(home: RulesScreen()),
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
+          home: RulesScreen()),
       );
       await tester.pumpAndSettle();
 
@@ -2066,7 +2103,11 @@ void _rulesScreenTests() {
 
     testWidgets('shows animal values section', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(home: RulesScreen()),
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
+          home: RulesScreen()),
       );
       await tester.pumpAndSettle();
 
@@ -2082,7 +2123,11 @@ void _rulesScreenTests() {
 
     testWidgets('tapping Start Tutorial opens carousel', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(home: RulesScreen()),
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
+          home: RulesScreen()),
       );
       await tester.pumpAndSettle();
 
@@ -2096,6 +2141,9 @@ void _rulesScreenTests() {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: Builder(
               builder: (context) => Scaffold(
                 body: ElevatedButton(
@@ -2139,6 +2187,9 @@ void _playerAreaAnimationTests() {
             bank: GameState.initialBank(),
           );
       return MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: PlayerArea(
             player: p,
@@ -2190,6 +2241,9 @@ void _playerAreaAnimationTests() {
         bank: GameState.initialBank(),
       );
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: PlayerArea(
             player: player,
@@ -2203,6 +2257,9 @@ void _playerAreaAnimationTests() {
 
       // Now rebuild with the attack event to trigger animation
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: PlayerArea(
             player: player,
@@ -2246,6 +2303,9 @@ void _playerAreaAnimationTests() {
         bank: GameState.initialBank(),
       );
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: PlayerArea(
             player: player,
@@ -2259,6 +2319,9 @@ void _playerAreaAnimationTests() {
 
       // Rebuild with sacrifice event
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: PlayerArea(
             player: player,
@@ -2286,6 +2349,9 @@ void _playerAreaAnimationTests() {
         bank: GameState.initialBank(),
       );
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: PlayerArea(
             player: player0,
@@ -2309,6 +2375,9 @@ void _playerAreaAnimationTests() {
         bank: GameState.initialBank(),
       );
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: PlayerArea(
             player: player1,
@@ -2692,6 +2761,9 @@ void _playerAreaAnimationTests() {
   group('AI PlayerSetupCard widget', () {
     testWidgets('shows AI toggle switch', (tester) async {
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: SingleChildScrollView(
             child: PlayerSetupCard(
@@ -2715,6 +2787,9 @@ void _playerAreaAnimationTests() {
 
     testWidgets('shows difficulty selector when AI enabled', (tester) async {
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: SingleChildScrollView(
             child: PlayerSetupCard(
@@ -2741,6 +2816,9 @@ void _playerAreaAnimationTests() {
 
     testWidgets('hides name input when AI enabled', (tester) async {
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: SingleChildScrollView(
             child: PlayerSetupCard(
@@ -2764,6 +2842,9 @@ void _playerAreaAnimationTests() {
 
     testWidgets('shows AI icon in header when AI enabled', (tester) async {
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: SingleChildScrollView(
             child: PlayerSetupCard(
@@ -2804,6 +2885,9 @@ void _playerAreaAnimationTests() {
       );
 
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: DiceCenter(
             gameState: game,
@@ -2838,6 +2922,9 @@ void _playerAreaAnimationTests() {
       );
 
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: DiceCenter(
             gameState: game,
@@ -3240,7 +3327,11 @@ void _playerAreaAnimationTests() {
     testWidgets('shows empty state when no records', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
-          child: MaterialApp(home: const StatsScreen()),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
+            home: const StatsScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -3272,7 +3363,11 @@ void _playerAreaAnimationTests() {
               return notifier;
             }),
           ],
-          child: MaterialApp(home: const StatsScreen()),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
+            home: const StatsScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -3313,7 +3408,11 @@ void _playerAreaAnimationTests() {
               return notifier;
             }),
           ],
-          child: MaterialApp(home: const StatsScreen()),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
+            home: const StatsScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -3347,7 +3446,11 @@ void _playerAreaAnimationTests() {
               return notifier;
             }),
           ],
-          child: MaterialApp(home: const StatsScreen()),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
+            home: const StatsScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -3515,6 +3618,9 @@ void _audioServiceTests() {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: Scaffold(
               body: Builder(
                 builder: (context) => ElevatedButton(
@@ -3544,6 +3650,9 @@ void _audioServiceTests() {
             gameSettingsProvider.overrideWith((_) => settingsNotifier),
           ],
           child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: Scaffold(
               body: Builder(
                 builder: (context) => ElevatedButton(
@@ -3568,6 +3677,9 @@ void _audioServiceTests() {
     testWidgets('WoodenFrame renders CustomPaint with WoodenBorderPainter', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Scaffold(
             body: WoodenFrame(
               borderWidth: 5.0,
@@ -3624,6 +3736,9 @@ void _audioServiceTests() {
     testWidgets('renders animal SVG without emoji watermark', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Scaffold(
             body: AnimalCard(
               animal: Animal.rabbit,
@@ -3653,6 +3768,9 @@ void _audioServiceTests() {
     testWidgets('shows attacked visual state', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Scaffold(
             body: AnimalCard(
               animal: Animal.rabbit,
@@ -3669,6 +3787,9 @@ void _audioServiceTests() {
     testWidgets('shows protected visual state', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Scaffold(
             body: AnimalCard(
               animal: Animal.smallDog,
@@ -3685,6 +3806,9 @@ void _audioServiceTests() {
     testWidgets('normal state shows no overlay icons', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Scaffold(
             body: AnimalCard(
               animal: Animal.cow,
@@ -3701,6 +3825,9 @@ void _audioServiceTests() {
     testWidgets('idle animation controller runs when enabled', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Scaffold(
             body: AnimalCard(
               animal: Animal.pig,
@@ -3719,6 +3846,9 @@ void _audioServiceTests() {
     testWidgets('hay texture renders at bottom of card', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Scaffold(
             body: AnimalCard(
               animal: Animal.horse,
@@ -3736,6 +3866,9 @@ void _audioServiceTests() {
       for (final animal in Animal.values) {
         await tester.pumpWidget(
           MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: Scaffold(
               body: AnimalCard(animal: animal, count: 3),
             ),
@@ -3750,6 +3883,9 @@ void _audioServiceTests() {
     testWidgets('splash has barn painter and rabbit SVG', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: SplashScreen(onComplete: () {}),
         ),
       );

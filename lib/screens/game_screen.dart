@@ -18,6 +18,8 @@ import '../utils/constants.dart';
 import '../widgets/dice_center.dart';
 import '../widgets/player_area.dart';
 import '../widgets/player_setup_card.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/l10n_helpers.dart';
 import '../widgets/settings_sheet.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
@@ -138,10 +140,31 @@ class _GameScreenState extends ConsumerState<GameScreen>
   }
 
   void _startGame() {
+    final l10n = AppLocalizations.of(context)!;
     final setup = ref.read(playerSetupProvider);
     final names = List.generate(
       setup.playerCount,
-      (i) => setup.displayName(i),
+      (i) {
+        if (i < setup.playerNames.length && setup.playerNames[i].isNotEmpty) {
+          return setup.playerNames[i];
+        }
+        if (i < setup.isAi.length && setup.isAi[i]) {
+          final diff = i < setup.aiDifficulties.length
+              ? setup.aiDifficulties[i]
+              : AiDifficulty.medium;
+          String diffLabel;
+          switch (diff) {
+            case AiDifficulty.easy:
+              diffLabel = l10n.aiEasy;
+            case AiDifficulty.medium:
+              diffLabel = l10n.aiMedium;
+            case AiDifficulty.hard:
+              diffLabel = l10n.aiHard;
+          }
+          return l10n.aiDefaultName(i + 1, diffLabel);
+        }
+        return l10n.playerN(i + 1);
+      },
     );
     final colors = List.generate(
       setup.playerCount,
@@ -172,6 +195,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   @override
   Widget build(BuildContext context) {
     final game = ref.watch(gameProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     ref.listen<GameState>(gameProvider, (prev, next) {
       // Check achievements on every state change
@@ -239,13 +263,13 @@ class _GameScreenState extends ConsumerState<GameScreen>
         position: _slideAnimation,
         child: Scaffold(
           appBar: AppBar(
-            title: const Text('Super Farmer'),
+            title: Text(l10n.appTitle),
             centerTitle: true,
             actions: [
               IconButton(
                 icon: const Icon(Icons.settings),
                 onPressed: () => SettingsSheet.show(context),
-                tooltip: 'Settings',
+                tooltip: l10n.settings,
               ),
               IconButton(
                 icon: const Icon(Icons.restart_alt),
@@ -253,7 +277,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
                   ref.read(gameProvider.notifier).resetGame();
                   _transitionController.forward(from: 0.0);
                 },
-                tooltip: 'New Game',
+                tooltip: l10n.newGame,
               ),
             ],
           ),
@@ -267,10 +291,11 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
   Widget _buildSetupScreen(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final setup = ref.watch(playerSetupProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('New Game')),
+      appBar: AppBar(title: Text(l10n.newGame)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
         child: Column(
@@ -286,7 +311,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Super Farmer',
+              l10n.appTitle,
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: theme.colorScheme.primary,
@@ -294,7 +319,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
             ),
             const SizedBox(height: 4),
             Text(
-              'Collect one of each animal to win!',
+              l10n.collectAnimalsShort,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.brightness == Brightness.dark
                     ? Colors.grey[300]
@@ -305,7 +330,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
             // Player count selector
             Text(
-              'Number of Players',
+              l10n.numberOfPlayers,
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -380,9 +405,9 @@ class _GameScreenState extends ConsumerState<GameScreen>
                   _startGame();
                 },
                 icon: const Icon(Icons.play_arrow, size: 28),
-                label: const Text(
-                  'Start Game',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                label: Text(
+                  l10n.startGame,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
@@ -596,14 +621,14 @@ class _GameScreenState extends ConsumerState<GameScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Achievement Unlocked!',
+                    AppLocalizations.of(context)!.achievementUnlocked,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
                   ),
                   Text(
-                    achievement.name,
+                    localizedAchievementName(context, achievement.id.name),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -639,6 +664,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   }
 
   void _showWinnerDialog(String winnerName) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -652,11 +678,11 @@ class _GameScreenState extends ConsumerState<GameScreen>
             children: [
               const Icon(Icons.emoji_events, color: Colors.amber, size: 32),
               const SizedBox(width: 8),
-              const Text('Winner!'),
+              Text(l10n.winner),
             ],
           ),
           content: Text(
-            '$winnerName has collected one of each animal and wins the game!',
+            l10n.winnerMessage(winnerName),
             style: theme.textTheme.bodyLarge,
           ),
           actions: [
@@ -665,7 +691,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
                 Navigator.of(ctx).pop();
                 ref.read(gameProvider.notifier).resetGame();
               },
-              child: const Text('New Game'),
+              child: Text(l10n.newGame),
             ),
           ],
         );
@@ -912,7 +938,7 @@ class _CompactPlayerStrip extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    '${(_winProgress * 100).round()}% complete',
+                    AppLocalizations.of(context)!.percentComplete((_winProgress * 100).round()),
                     style: theme.textTheme.bodySmall?.copyWith(color: color),
                   ),
                 ],
@@ -943,7 +969,7 @@ class _CompactPlayerStrip extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        animal.label,
+                        localizedAnimalName(ctx, animal),
                         style: theme.textTheme.labelSmall,
                       ),
                     ],
@@ -955,9 +981,9 @@ class _CompactPlayerStrip extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _dogInfo(Animal.smallDog, theme),
+                  _dogInfo(Animal.smallDog, theme, ctx),
                   const SizedBox(width: 24),
-                  _dogInfo(Animal.bigDog, theme),
+                  _dogInfo(Animal.bigDog, theme, ctx),
                 ],
               ),
             ],
@@ -967,7 +993,7 @@ class _CompactPlayerStrip extends StatelessWidget {
     );
   }
 
-  Widget _dogInfo(Animal dog, ThemeData theme) {
+  Widget _dogInfo(Animal dog, ThemeData theme, BuildContext context) {
     final count = player.countOf(dog);
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -988,7 +1014,7 @@ class _CompactPlayerStrip extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 4),
-        Text(dog.label, style: theme.textTheme.labelSmall),
+        Text(localizedAnimalName(context, dog), style: theme.textTheme.labelSmall),
       ],
     );
   }

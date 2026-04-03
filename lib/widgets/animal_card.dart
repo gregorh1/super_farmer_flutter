@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../l10n/l10n_helpers.dart';
 import '../models/animal.dart';
 import 'farm_decorations.dart';
 
@@ -147,7 +148,7 @@ class _AnimalCardState extends State<AnimalCard>
               left: 0,
               right: 0,
               child: Text(
-                widget.animal.label,
+                localizedAnimalName(context, widget.animal),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: widget.size * 0.12,

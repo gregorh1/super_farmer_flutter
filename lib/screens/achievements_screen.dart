@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/l10n_helpers.dart';
 import '../models/achievement.dart';
 import '../providers/achievement_provider.dart';
 
@@ -13,7 +15,7 @@ class AchievementsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Achievements'),
+        title: Text(AppLocalizations.of(context)!.achievements),
         centerTitle: true,
       ),
       body: Column(
@@ -51,6 +53,7 @@ class _ProgressHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final progress = totalCount > 0 ? unlockedCount / totalCount : 0.0;
 
     return Padding(
@@ -64,13 +67,13 @@ class _ProgressHeader extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Progress',
+                    l10n.progress,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
-                    '$unlockedCount / $totalCount',
+                    l10n.nSlashTotal(unlockedCount, totalCount),
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.primary,
@@ -93,7 +96,7 @@ class _ProgressHeader extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                '$unlockedCount of $totalCount unlocked',
+                l10n.nOfTotalUnlocked(unlockedCount, totalCount),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
@@ -156,7 +159,7 @@ class _AchievementTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    definition.name,
+                    localizedAchievementName(context, definition.id.name),
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: unlocked
@@ -167,7 +170,7 @@ class _AchievementTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    definition.description,
+                    localizedAchievementDesc(context, definition.id.name),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: unlocked
                           ? theme.colorScheme.onSurface.withValues(alpha: 0.8)

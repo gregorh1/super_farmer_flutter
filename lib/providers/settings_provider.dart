@@ -3,6 +3,65 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ai_difficulty.dart';
 
+/// Language preference for the app.
+enum LanguagePreference { system, polish, english }
+
+extension LanguagePreferenceExtension on LanguagePreference {
+  Locale? get locale {
+    switch (this) {
+      case LanguagePreference.system:
+        return null; // Use system locale
+      case LanguagePreference.polish:
+        return const Locale('pl');
+      case LanguagePreference.english:
+        return const Locale('en');
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case LanguagePreference.system:
+        return Icons.language;
+      case LanguagePreference.polish:
+        return Icons.language;
+      case LanguagePreference.english:
+        return Icons.language;
+    }
+  }
+}
+
+const _languagePreferenceKey = 'language_preference';
+
+class LanguageNotifier extends StateNotifier<LanguagePreference> {
+  LanguageNotifier() : super(LanguagePreference.system) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getString(_languagePreferenceKey);
+    if (stored != null && mounted) {
+      for (final pref in LanguagePreference.values) {
+        if (pref.name == stored) {
+          state = pref;
+          return;
+        }
+      }
+    }
+  }
+
+  Future<void> setLanguage(LanguagePreference preference) async {
+    state = preference;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_languagePreferenceKey, preference.name);
+  }
+}
+
+final languageProvider =
+    StateNotifierProvider<LanguageNotifier, LanguagePreference>(
+  (ref) => LanguageNotifier(),
+);
+
 /// Theme preference that maps to [ThemeMode].
 enum ThemePreference { system, light, dark }
 

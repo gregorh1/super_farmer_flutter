@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/settings_provider.dart';
 import 'tutorial_carousel.dart';
 
@@ -22,8 +23,42 @@ class SettingsSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(gameSettingsProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
-    return Padding(
+    String languageLabel(LanguagePreference pref) {
+      switch (pref) {
+        case LanguagePreference.system:
+          return l10n.languageSystem;
+        case LanguagePreference.polish:
+          return l10n.languagePolish;
+        case LanguagePreference.english:
+          return l10n.languageEnglish;
+      }
+    }
+
+    String themeLabel(ThemePreference pref) {
+      switch (pref) {
+        case ThemePreference.system:
+          return l10n.themeSystem;
+        case ThemePreference.light:
+          return l10n.themeLight;
+        case ThemePreference.dark:
+          return l10n.themeDark;
+      }
+    }
+
+    String animSpeedLabel(AnimationSpeed speed) {
+      switch (speed) {
+        case AnimationSpeed.slow:
+          return l10n.speedSlow;
+        case AnimationSpeed.normal:
+          return l10n.speedNormal;
+        case AnimationSpeed.fast:
+          return l10n.speedFast;
+      }
+    }
+
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -44,7 +79,7 @@ class SettingsSheet extends ConsumerWidget {
               Icon(Icons.settings, color: theme.colorScheme.primary),
               const SizedBox(width: 8),
               Text(
-                'Settings',
+                l10n.settings,
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -53,16 +88,40 @@ class SettingsSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
 
+          // Language selector
+          _SettingsTile(
+            icon: ref.watch(languageProvider).icon,
+            title: l10n.language,
+            subtitle: languageLabel(ref.watch(languageProvider)),
+            trailing: SegmentedButton<LanguagePreference>(
+              segments: LanguagePreference.values.map((pref) {
+                return ButtonSegment(
+                  value: pref,
+                  label: Text(languageLabel(pref), style: const TextStyle(fontSize: 11)),
+                );
+              }).toList(),
+              selected: {ref.watch(languageProvider)},
+              onSelectionChanged: (selected) {
+                ref.read(languageProvider.notifier).setLanguage(selected.first);
+              },
+              style: ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          ),
+          const Divider(height: 1),
+
           // Theme selector
           _SettingsTile(
             icon: ref.watch(themeProvider).icon,
-            title: 'Theme',
-            subtitle: ref.watch(themeProvider).label,
+            title: l10n.theme,
+            subtitle: themeLabel(ref.watch(themeProvider)),
             trailing: SegmentedButton<ThemePreference>(
               segments: ThemePreference.values.map((pref) {
                 return ButtonSegment(
                   value: pref,
-                  label: Text(pref.label, style: const TextStyle(fontSize: 12)),
+                  label: Text(themeLabel(pref), style: const TextStyle(fontSize: 12)),
                   icon: Icon(pref.icon, size: 16),
                 );
               }).toList(),
@@ -83,8 +142,8 @@ class SettingsSheet extends ConsumerWidget {
             icon: settings.soundEnabled
                 ? Icons.volume_up
                 : Icons.volume_off,
-            title: 'Sound',
-            subtitle: settings.soundEnabled ? 'On' : 'Off',
+            title: l10n.sound,
+            subtitle: settings.soundEnabled ? l10n.soundOn : l10n.soundOff,
             trailing: Switch(
               value: settings.soundEnabled,
               onChanged: (_) =>
@@ -123,13 +182,13 @@ class SettingsSheet extends ConsumerWidget {
           // Animation speed
           _SettingsTile(
             icon: Icons.speed,
-            title: 'Animation Speed',
-            subtitle: settings.animationSpeed.label,
+            title: l10n.animationSpeed,
+            subtitle: animSpeedLabel(settings.animationSpeed),
             trailing: SegmentedButton<AnimationSpeed>(
               segments: AnimationSpeed.values.map((speed) {
                 return ButtonSegment(
                   value: speed,
-                  label: Text(speed.label, style: const TextStyle(fontSize: 12)),
+                  label: Text(animSpeedLabel(speed), style: const TextStyle(fontSize: 12)),
                 );
               }).toList(),
               selected: {settings.animationSpeed},
@@ -149,10 +208,10 @@ class SettingsSheet extends ConsumerWidget {
           // Confirm end turn
           _SettingsTile(
             icon: Icons.check_circle_outline,
-            title: 'Confirm End Turn',
+            title: l10n.confirmEndTurn,
             subtitle: settings.confirmEndTurn
-                ? 'Ask before ending turn'
-                : 'End turn immediately',
+                ? l10n.askBeforeEnding
+                : l10n.endTurnImmediately,
             trailing: Switch(
               value: settings.confirmEndTurn,
               onChanged: (_) =>
@@ -164,8 +223,8 @@ class SettingsSheet extends ConsumerWidget {
           // How to Play
           _SettingsTile(
             icon: Icons.menu_book,
-            title: 'How to Play',
-            subtitle: 'Interactive tutorial',
+            title: l10n.howToPlay,
+            subtitle: l10n.interactiveTutorialShort,
             trailing: FilledButton.tonal(
               onPressed: () {
                 Navigator.of(context).pop(); // close settings sheet
@@ -175,7 +234,7 @@ class SettingsSheet extends ConsumerWidget {
                 visualDensity: VisualDensity.compact,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text('Open', style: TextStyle(fontSize: 12)),
+              child: Text(l10n.open, style: const TextStyle(fontSize: 12)),
             ),
           ),
           const SizedBox(height: 8),
@@ -230,7 +289,13 @@ class _SettingsTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          trailing,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: trailing,
+            ),
+          ),
         ],
       ),
     );

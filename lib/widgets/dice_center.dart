@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/l10n_helpers.dart';
 import '../models/animal.dart';
 import '../models/dice.dart';
 import '../providers/game_provider.dart';
@@ -149,6 +151,7 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final currentPlayer = widget.gameState.currentPlayer!;
     final playerColor = currentPlayer.color;
 
@@ -212,7 +215,7 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
-                      "${currentPlayer.name}'s Turn",
+                      l10n.playerTurn(currentPlayer.name),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: playerColor,
@@ -240,7 +243,7 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
-                  'Tap to roll the dice!',
+                  l10n.tapToRoll,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.brightness == Brightness.dark
                         ? const Color(0xFFE0E0E0)
@@ -265,7 +268,7 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
                 onPressed: _canRoll ? _handleRoll : null,
                 icon: const Icon(Icons.casino, size: 24),
                 label: Text(
-                  'Roll Dice',
+                  l10n.rollDice,
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 style: FilledButton.styleFrom(
@@ -284,7 +287,7 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
               child: OutlinedButton.icon(
                 onPressed: _canEndTurn ? widget.onEndTurn : null,
                 icon: const Icon(Icons.skip_next, size: 22),
-                label: const Text('End Turn', style: TextStyle(fontSize: 16)),
+                label: Text(l10n.endTurn, style: const TextStyle(fontSize: 16)),
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -304,6 +307,7 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
   }
 
   Widget _buildResultLabel(ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
     final event = widget.gameState.lastEvent;
     final roll = _displayedRoll!;
 
@@ -318,7 +322,7 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
             Icon(Icons.add_circle, size: 16, color: Colors.green.shade700),
             const SizedBox(width: 2),
             Text(
-              '${entry.value} ${entry.key.label}',
+              '${entry.value} ${localizedAnimalName(context, entry.key)}',
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Colors.green.shade700,
@@ -341,7 +345,7 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
           ),
           const SizedBox(width: 4),
           Text(
-            event?.smallDogSacrificed == true ? 'Fox! Dog saved you' : 'Fox attack!',
+            event?.smallDogSacrificed == true ? l10n.foxDogSaved : l10n.foxAttack,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: Colors.red.shade700,
@@ -361,7 +365,7 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
           ),
           const SizedBox(width: 4),
           Text(
-            event?.bigDogSacrificed == true ? 'Wolf! Dog saved you' : 'Wolf attack!',
+            event?.bigDogSacrificed == true ? l10n.wolfDogSaved : l10n.wolfAttack,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: Colors.red.shade700,
@@ -374,7 +378,7 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
     if (parts.isEmpty) {
       // No breeding, no attacks
       parts.add(Text(
-        'No match — nothing bred',
+        l10n.noMatch,
         style: theme.textTheme.bodyMedium?.copyWith(
           color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
         ),
@@ -391,7 +395,7 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Result:',
+            l10n.result,
             style: theme.textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -409,6 +413,7 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
   }
 
   Widget _buildRollingDice() {
+    final l10n = AppLocalizations.of(context)!;
     final greenFace = _greenFaces[_shuffleIndex % _greenFaces.length];
     final redFace = _redFaces[_shuffleIndex % _redFaces.length];
 
@@ -424,13 +429,13 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
               _DieResult(
                 face: greenFace,
                 color: const Color(0xFF2E7D32),
-                label: 'Green',
+                label: l10n.greenDie,
               ),
               const SizedBox(width: 20),
               _DieResult(
                 face: redFace,
                 color: const Color(0xFFC62828),
-                label: 'Red',
+                label: l10n.redDie,
               ),
             ],
           ),
@@ -440,6 +445,7 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
   }
 
   Widget _buildRevealedDice(DiceRollResult roll) {
+    final l10n = AppLocalizations.of(context)!;
     return AnimatedBuilder(
       animation: _revealController,
       builder: (context, child) {
@@ -454,13 +460,13 @@ class DiceCenterState extends State<DiceCenter> with TickerProviderStateMixin {
                 _DieResult(
                   face: roll.green,
                   color: const Color(0xFF2E7D32),
-                  label: 'Green',
+                  label: l10n.greenDie,
                 ),
                 const SizedBox(width: 20),
                 _DieResult(
                   face: roll.red,
                   color: const Color(0xFFC62828),
-                  label: 'Red',
+                  label: l10n.redDie,
                 ),
               ],
             ),
@@ -527,7 +533,7 @@ class _DieResult extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          face.name[0].toUpperCase() + face.name.substring(1),
+          localizedDiceFaceName(context, face),
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -570,6 +576,7 @@ class _AiThinkingIndicatorState extends State<_AiThinkingIndicator>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
@@ -579,7 +586,7 @@ class _AiThinkingIndicatorState extends State<_AiThinkingIndicator>
             Icon(Icons.smart_toy, size: 16, color: widget.color),
             const SizedBox(width: 6),
             Text(
-              'Thinking',
+              l10n.thinking,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -609,4 +616,3 @@ class _AiThinkingIndicatorState extends State<_AiThinkingIndicator>
     );
   }
 }
-

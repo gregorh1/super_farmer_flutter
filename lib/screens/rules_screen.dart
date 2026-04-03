@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/l10n_helpers.dart';
 import '../models/animal.dart';
 import '../widgets/tutorial_carousel.dart';
 
@@ -10,8 +12,9 @@ class RulesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Rules')),
+      appBar: AppBar(title: Text(l10n.rules)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
         children: [
@@ -40,7 +43,7 @@ class RulesScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Interactive Tutorial',
+                      l10n.interactiveTutorial,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: isDark
@@ -50,7 +53,7 @@ class RulesScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Step-by-step guide with animations',
+                      l10n.stepByStepGuide,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: isDark
                             ? const Color(0xFFB5B0A8)
@@ -61,7 +64,7 @@ class RulesScreen extends StatelessWidget {
                     FilledButton.icon(
                       onPressed: () => TutorialCarousel.show(context),
                       icon: const Icon(Icons.play_arrow, size: 20),
-                      label: const Text('Start Tutorial'),
+                      label: Text(l10n.startTutorial),
                       style: FilledButton.styleFrom(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -83,7 +86,7 @@ class RulesScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Quick Reference',
+                    l10n.quickReference,
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isDark
@@ -92,16 +95,8 @@ class RulesScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Super Farmer is a classic Polish board game where players '
-                    'compete to collect animals by rolling dice.\n\n'
-                    'Goal: Be the first player to collect at least one of each '
-                    'animal type: rabbit, lamb, pig, cow, and horse.\n\n'
-                    'On each turn, roll two dice. The animals shown on the dice '
-                    'are added to your herd (paired with animals you already have).\n\n'
-                    'Beware! A fox will steal all your rabbits, and a wolf will '
-                    'steal everything except horses. Use a small dog to guard '
-                    'against the fox and a big dog to guard against the wolf.',
+                  Text(
+                    l10n.rulesText,
                   ),
                 ],
               ),
@@ -117,7 +112,7 @@ class RulesScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Animal Values',
+                    l10n.animalValues,
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isDark
@@ -141,12 +136,12 @@ class RulesScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            animal.label,
+                            localizedAnimalName(context, animal),
                             style: theme.textTheme.bodyLarge,
                           ),
                           const Spacer(),
                           Text(
-                            '${animal.totalInGame} in game',
+                            l10n.nInGame(animal.totalInGame),
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),

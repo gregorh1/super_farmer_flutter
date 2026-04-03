@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/l10n_helpers.dart';
 import '../models/animal.dart';
 import '../models/exchange.dart';
 import '../providers/game_provider.dart';
@@ -381,7 +383,7 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
           },
         ),
         Text(
-          animal.label,
+          localizedAnimalName(context, animal),
           style: theme.textTheme.labelSmall?.copyWith(
             fontSize: 9,
             color: theme.colorScheme.onSurface
@@ -393,6 +395,14 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
   }
 
   Widget _buildExchangeControl(int index, Color color, ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
+    final exchangeLabels = [
+      l10n.exchangeRabbitsForSheep,
+      l10n.exchangeSheepForPig,
+      l10n.exchangePigsForCow,
+      l10n.exchangeCowsForHorse,
+    ];
+
     final rate = PlayerArea.exchangeRateValues[index];
     final lowerAnimal = PlayerArea.farmAnimals[index];
     final higherAnimal = PlayerArea.farmAnimals[index + 1];
@@ -416,7 +426,7 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
         (widget.gameState.bank[lowerAnimal] ?? 0) >= rate;
 
     return Tooltip(
-      message: PlayerArea.exchangeRateLabels[index],
+      message: exchangeLabels[index],
       child: SizedBox(
         width: 48,
         child: Column(
@@ -435,7 +445,7 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
                 ),
                 color: color,
                 disabledColor: color.withValues(alpha: 0.2),
-                tooltip: canTradeUp ? '$rate:1' : 'Not enough animals',
+                tooltip: canTradeUp ? '$rate:1' : l10n.notEnoughAnimals,
               ),
             ),
             Container(
@@ -467,7 +477,7 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
                 ),
                 color: color,
                 disabledColor: color.withValues(alpha: 0.2),
-                tooltip: canTradeDown ? '1:$rate' : 'Not enough animals',
+                tooltip: canTradeDown ? '1:$rate' : l10n.notEnoughAnimals,
               ),
             ),
           ],
@@ -477,6 +487,7 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
   }
 
   Widget _buildDogRow(Color color, ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
     final canBuySmallDog = widget.isCurrentPlayer &&
         !widget.isAiTurn &&
         widget.player.countOf(Animal.lamb) >= 1 &&
@@ -492,7 +503,7 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
       children: [
         _buildDogCell(
           Animal.smallDog,
-          'Buy with 1 Lamb',
+          l10n.buyWithLamb,
           canBuySmallDog,
           Exchange.rates[4],
           color,
@@ -501,7 +512,7 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
         const SizedBox(width: 24),
         _buildDogCell(
           Animal.bigDog,
-          'Buy with 1 Cow',
+          l10n.buyWithCow,
           canBuyBigDog,
           Exchange.rates[5],
           color,

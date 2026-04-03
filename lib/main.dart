@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'l10n/app_localizations.dart';
 import 'providers/settings_provider.dart';
 import 'router.dart';
 import 'screens/splash_screen.dart';
@@ -29,6 +30,8 @@ class _SuperFarmerAppState extends ConsumerState<SuperFarmerApp> {
   Widget build(BuildContext context) {
     final themePref = ref.watch(themeProvider);
     final themeMode = themePref.themeMode;
+    final langPref = ref.watch(languageProvider);
+    final locale = langPref.locale;
 
     if (_showSplash) {
       return MaterialApp(
@@ -37,6 +40,9 @@ class _SuperFarmerAppState extends ConsumerState<SuperFarmerApp> {
         darkTheme: SuperFarmerTheme.darkTheme,
         themeMode: themeMode,
         debugShowCheckedModeBanner: false,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: locale,
         home: SplashScreen(onComplete: _onSplashComplete),
       );
     }
@@ -50,6 +56,9 @@ class _SuperFarmerAppState extends ConsumerState<SuperFarmerApp> {
       themeAnimationCurve: Curves.easeInOut,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: locale,
     );
   }
 }
