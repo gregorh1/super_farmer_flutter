@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../l10n/app_localizations.dart';
 import '../models/animal.dart';
 import '../providers/premium_provider.dart';
-import '../services/ad_service.dart';
 import '../widgets/animal_card.dart';
 import '../widgets/settings_sheet.dart';
 
@@ -94,11 +93,8 @@ class HomeScreen extends ConsumerWidget {
                       ))
                   .toList(),
             ),
-            // Banner ad for non-premium users
-            if (!isPremium) ...[
-              const SizedBox(height: 16),
-              const Center(child: BannerAdWidget()),
-            ],
+            // Bottom padding so content doesn't hide behind pinned banner
+            if (!isPremium) const SizedBox(height: 72),
           ],
         ),
       ),

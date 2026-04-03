@@ -460,7 +460,9 @@ class PlayerAreaState extends State<PlayerArea> with TickerProviderStateMixin {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: color,
+                  color: theme.brightness == Brightness.dark
+                      ? const Color(0xFFB0D8B0)
+                      : color,
                 ),
               ),
             ),
