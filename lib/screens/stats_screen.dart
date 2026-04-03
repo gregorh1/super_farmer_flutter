@@ -8,8 +8,10 @@ import '../models/achievement.dart';
 import '../models/game_record.dart';
 import '../models/game_replay.dart';
 import '../providers/achievement_provider.dart';
+import '../providers/premium_provider.dart';
 import '../providers/replay_provider.dart';
 import '../providers/stats_provider.dart';
+import '../widgets/premium_upgrade_dialog.dart';
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
@@ -17,11 +19,60 @@ class StatsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final isPremium = ref.watch(isPremiumProvider);
     final records = ref.watch(statsProvider);
     final stats = ref.watch(gameStatsProvider);
 
     final achievementStates = ref.watch(achievementProvider);
     final replays = ref.watch(replayStorageProvider);
+
+    // Non-premium users see a premium gate overlay
+    if (!isPremium) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.statistics),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.bar_chart,
+                  size: 80,
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  l10n.premiumRequired,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.premiumFeatureStatistics,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () => showPremiumUpgradeDialog(context),
+                  icon: const Icon(Icons.star),
+                  label: Text(l10n.upgrade),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.amber.shade700,
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return DefaultTabController(
       length: 5,

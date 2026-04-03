@@ -4,18 +4,69 @@ import '../l10n/app_localizations.dart';
 import '../l10n/l10n_helpers.dart';
 import '../models/achievement.dart';
 import '../providers/achievement_provider.dart';
+import '../providers/premium_provider.dart';
+import '../widgets/premium_upgrade_dialog.dart';
 
 class AchievementsScreen extends ConsumerWidget {
   const AchievementsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isPremium = ref.watch(isPremiumProvider);
     final states = ref.watch(achievementProvider);
     final unlockedCount = states.where((s) => s.unlocked).length;
+    final l10n = AppLocalizations.of(context)!;
+
+    if (!isPremium) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.achievements),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.emoji_events,
+                  size: 80,
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  l10n.premiumRequired,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.premiumFeatureAllThemes,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () => showPremiumUpgradeDialog(context),
+                  icon: const Icon(Icons.star),
+                  label: Text(l10n.upgrade),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.amber.shade700,
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.achievements),
+        title: Text(l10n.achievements),
         centerTitle: true,
       ),
       body: Column(

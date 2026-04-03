@@ -1321,6 +1321,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stats'**
   String get navStats;
+
+  /// No description provided for @premium.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium'**
+  String get premium;
+
+  /// No description provided for @premiumUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Premium'**
+  String get premiumUnlock;
+
+  /// No description provided for @premiumDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Get the full Super Farmer experience!'**
+  String get premiumDescription;
+
+  /// No description provided for @premiumFeature3to4Players.
+  ///
+  /// In en, this message translates to:
+  /// **'3-4 player mode'**
+  String get premiumFeature3to4Players;
+
+  /// No description provided for @premiumFeatureAllAi.
+  ///
+  /// In en, this message translates to:
+  /// **'All AI difficulties'**
+  String get premiumFeatureAllAi;
+
+  /// No description provided for @premiumFeatureAllThemes.
+  ///
+  /// In en, this message translates to:
+  /// **'All themes & unlockables'**
+  String get premiumFeatureAllThemes;
+
+  /// No description provided for @premiumFeatureStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics & replays'**
+  String get premiumFeatureStatistics;
+
+  /// No description provided for @premiumFeatureAdFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad-free experience'**
+  String get premiumFeatureAdFree;
+
+  /// No description provided for @premiumPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'\$0.99 one-time'**
+  String get premiumPrice;
+
+  /// No description provided for @premiumBuy.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy Premium — \$0.99'**
+  String get premiumBuy;
+
+  /// No description provided for @premiumRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Purchase'**
+  String get premiumRestore;
+
+  /// No description provided for @premiumAlreadyUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium already unlocked!'**
+  String get premiumAlreadyUnlocked;
+
+  /// No description provided for @premiumPurchaseSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium unlocked! Enjoy the full experience.'**
+  String get premiumPurchaseSuccess;
+
+  /// No description provided for @premiumPurchaseError.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase failed. Please try again.'**
+  String get premiumPurchaseError;
+
+  /// No description provided for @premiumRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium Required'**
+  String get premiumRequired;
+
+  /// No description provided for @premiumRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This feature requires Premium. Upgrade to unlock all features!'**
+  String get premiumRequiredMessage;
+
+  /// No description provided for @upgrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade'**
+  String get upgrade;
+
+  /// No description provided for @removeAds.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Ads'**
+  String get removeAds;
+
+  /// No description provided for @adsRemovedWith.
+  ///
+  /// In en, this message translates to:
+  /// **'Ads removed with Premium'**
+  String get adsRemovedWith;
+
+  /// No description provided for @freeFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Free features: 2-player mode, Easy AI, basic theme'**
+  String get freeFeatures;
+
+  /// No description provided for @watchAdForHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Watching a short ad...'**
+  String get watchAdForHint;
 }
 
 class _AppLocalizationsDelegate

@@ -238,5 +238,27 @@
   "navHome": "Home",
   "navGame": "Game",
   "navRules": "Rules",
-  "navStats": "Stats"
+  "navStats": "Stats",
+
+  "premium": "Premium",
+  "premiumUnlock": "Unlock Premium",
+  "premiumDescription": "Get the full Super Farmer experience!",
+  "premiumFeature3to4Players": "3-4 player mode",
+  "premiumFeatureAllAi": "All AI difficulties",
+  "premiumFeatureAllThemes": "All themes & unlockables",
+  "premiumFeatureStatistics": "Statistics & replays",
+  "premiumFeatureAdFree": "Ad-free experience",
+  "premiumPrice": "$0.99 one-time",
+  "premiumBuy": "Buy Premium — $0.99",
+  "premiumRestore": "Restore Purchase",
+  "premiumAlreadyUnlocked": "Premium already unlocked!",
+  "premiumPurchaseSuccess": "Premium unlocked! Enjoy the full experience.",
+  "premiumPurchaseError": "Purchase failed. Please try again.",
+  "premiumRequired": "Premium Required",
+  "premiumRequiredMessage": "This feature requires Premium. Upgrade to unlock all features!",
+  "upgrade": "Upgrade",
+  "removeAds": "Remove Ads",
+  "adsRemovedWith": "Ads removed with Premium",
+  "freeFeatures": "Free features: 2-player mode, Easy AI, basic theme",
+  "watchAdForHint": "Watching a short ad..."
 }

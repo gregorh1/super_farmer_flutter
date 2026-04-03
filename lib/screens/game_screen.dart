@@ -11,9 +11,11 @@ import '../models/exchange.dart';
 import '../models/game_record.dart';
 import '../providers/achievement_provider.dart';
 import '../providers/game_provider.dart';
+import '../providers/premium_provider.dart';
 import '../providers/replay_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/stats_provider.dart';
+import '../services/ad_service.dart' as ads;
 import '../services/audio_service.dart';
 import '../utils/constants.dart';
 import '../widgets/dice_center.dart';
@@ -21,6 +23,7 @@ import '../widgets/player_area.dart';
 import '../widgets/player_setup_card.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/l10n_helpers.dart';
+import '../widgets/premium_upgrade_dialog.dart';
 import '../widgets/settings_sheet.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
@@ -36,10 +39,12 @@ class _GameScreenState extends ConsumerState<GameScreen>
   late final Animation<double> _fadeAnimation;
   late final Animation<Offset> _slideAnimation;
   bool _aiTurnInProgress = false;
+  final _adService = ads.AdService();
 
   @override
   void initState() {
     super.initState();
+    _initAds();
     _transitionController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -57,9 +62,17 @@ class _GameScreenState extends ConsumerState<GameScreen>
     ));
   }
 
+  void _initAds() {
+    // Only initialize ads for non-premium users
+    if (!ref.read(premiumProvider).isPremium) {
+      _adService.initialize();
+    }
+  }
+
   @override
   void dispose() {
     _transitionController.dispose();
+    _adService.dispose();
     super.dispose();
   }
 
@@ -312,6 +325,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
     final setup = ref.watch(playerSetupProvider);
+    final isPremium = ref.watch(isPremiumProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.newGame)),
@@ -387,6 +401,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
                       usedColorIndices: usedColors,
                       isAi: isPlayerAi,
                       aiDifficulty: difficulty,
+                      isPremium: isPremium,
                       onNameChanged: (name) {
                         ref
                             .read(playerSetupProvider.notifier)
@@ -695,6 +710,12 @@ class _GameScreenState extends ConsumerState<GameScreen>
   }
 
   void _showWinnerDialog(String winnerName) {
+    // Show interstitial ad between games (non-premium users only)
+    final isPremium = ref.read(isPremiumProvider);
+    if (!isPremium) {
+      _adService.showInterstitial();
+    }
+
     final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
@@ -731,8 +752,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
   }
 }
 
-/// Card-style player count selector.
-class _PlayerCountSelector extends StatelessWidget {
+/// Card-style player count selector with premium gating for 3-4 players.
+class _PlayerCountSelector extends ConsumerWidget {
   const _PlayerCountSelector({
     required this.count,
     required this.onChanged,
@@ -742,20 +763,30 @@ class _PlayerCountSelector extends StatelessWidget {
   final ValueChanged<int> onChanged;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isPremium = ref.watch(isPremiumProvider);
+
     return Row(
       children: List.generate(
         AppConstants.maxPlayers - AppConstants.minPlayers + 1,
         (i) {
           final value = AppConstants.minPlayers + i;
           final isSelected = value == count;
+          final isLocked = !isPremium && value > 2;
+
           return Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6),
               child: GestureDetector(
-                onTap: () => onChanged(value),
+                onTap: () {
+                  if (isLocked) {
+                    showPremiumRequiredDialog(context);
+                  } else {
+                    onChanged(value);
+                  }
+                },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeInOut,
@@ -764,7 +795,9 @@ class _PlayerCountSelector extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? theme.colorScheme.primary
-                        : theme.colorScheme.surface,
+                        : isLocked
+                            ? theme.colorScheme.surface.withValues(alpha: 0.5)
+                            : theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: isSelected
@@ -789,21 +822,35 @@ class _PlayerCountSelector extends StatelessWidget {
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          value,
-                          (_) => Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 2),
-                            child: Icon(
-                              Icons.person,
-                              size: 18,
-                              color: isSelected
-                                  ? Colors.white
-                                  : theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.5),
+                        children: [
+                          ...List.generate(
+                            value,
+                            (_) => Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 2),
+                              child: Icon(
+                                Icons.person,
+                                size: 18,
+                                color: isSelected
+                                    ? Colors.white
+                                    : isLocked
+                                        ? theme.colorScheme.onSurface
+                                            .withValues(alpha: 0.25)
+                                        : theme.colorScheme.onSurface
+                                            .withValues(alpha: 0.5),
+                              ),
                             ),
                           ),
-                        ),
+                          if (isLocked)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 2),
+                              child: Icon(
+                                Icons.lock,
+                                size: 14,
+                                color: Colors.amber.shade700,
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -812,7 +859,10 @@ class _PlayerCountSelector extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color: isSelected
                               ? Colors.white
-                              : theme.colorScheme.onSurface,
+                              : isLocked
+                                  ? theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.4)
+                                  : theme.colorScheme.onSurface,
                         ),
                       ),
                     ],

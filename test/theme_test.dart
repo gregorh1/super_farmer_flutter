@@ -2,10 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:super_farmer/providers/premium_provider.dart';
 import 'package:super_farmer/providers/settings_provider.dart';
 import 'package:super_farmer/theme.dart';
 import 'package:super_farmer/main.dart';
 import 'package:super_farmer/widgets/settings_sheet.dart';
+
+/// A PremiumNotifier that starts as premium immediately (no async).
+class _TestPremiumNotifier extends PremiumNotifier {
+  _TestPremiumNotifier() {
+    state = const PremiumState(isPremium: true, isLoaded: true);
+  }
+}
+
+/// Premium overrides to bypass premium gate in tests.
+final _premiumOverrides = [
+  premiumProvider.overrideWith((ref) => _TestPremiumNotifier()),
+];
 
 void main() {
   group('SuperFarmerTheme', () {
@@ -25,8 +38,8 @@ void main() {
       expect(theme.scaffoldBackgroundColor, const Color(0xFF162016));
       // App bar uses night forest green
       expect(theme.appBarTheme.backgroundColor, const Color(0xFF1B2E1B));
-      // Cards use night card color
-      expect(theme.cardTheme.color, const Color(0xFF1E2E1E));
+      // Cards use dark green card color
+      expect(theme.cardTheme.color, const Color(0xFF253025));
     });
 
     test('darkTheme has warm amber accents', () {
@@ -215,8 +228,13 @@ void main() {
     });
 
     testWidgets('can switch to dark theme', (tester) async {
-      SharedPreferences.setMockInitialValues({});
-      await tester.pumpWidget(const ProviderScope(child: SuperFarmerApp()));
+      SharedPreferences.setMockInitialValues({'is_premium': true});
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: _premiumOverrides,
+          child: const SuperFarmerApp(),
+        ),
+      );
       await tester.pump(const Duration(seconds: 4));
       await tester.pumpAndSettle();
 

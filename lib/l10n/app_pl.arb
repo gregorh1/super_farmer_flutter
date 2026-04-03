@@ -221,5 +221,27 @@
   "navHome": "Start",
   "navGame": "Gra",
   "navRules": "Zasady",
-  "navStats": "Statystyki"
+  "navStats": "Statystyki",
+
+  "premium": "Premium",
+  "premiumUnlock": "Odblokuj Premium",
+  "premiumDescription": "Poczuj pelny Superfarmer!",
+  "premiumFeature3to4Players": "Tryb 3-4 graczy",
+  "premiumFeatureAllAi": "Wszystkie poziomy AI",
+  "premiumFeatureAllThemes": "Wszystkie motywy i odblokowania",
+  "premiumFeatureStatistics": "Statystyki i powtorki",
+  "premiumFeatureAdFree": "Bez reklam",
+  "premiumPrice": "3,99 zl jednorazowo",
+  "premiumBuy": "Kup Premium — 3,99 zl",
+  "premiumRestore": "Przywroc Zakup",
+  "premiumAlreadyUnlocked": "Premium juz odblokowany!",
+  "premiumPurchaseSuccess": "Premium odblokowany! Ciesz sie pelnym doswiadczeniem.",
+  "premiumPurchaseError": "Zakup nie powiodl sie. Sprobuj ponownie.",
+  "premiumRequired": "Wymagany Premium",
+  "premiumRequiredMessage": "Ta funkcja wymaga Premium. Uaktualnij, aby odblokowac wszystkie funkcje!",
+  "upgrade": "Uaktualnij",
+  "removeAds": "Usun Reklamy",
+  "adsRemovedWith": "Reklamy usuniete z Premium",
+  "freeFeatures": "Darmowe funkcje: tryb 2-osobowy, latwy AI, podstawowy motyw",
+  "watchAdForHint": "Wyswietlanie krotklej reklamy..."
 }

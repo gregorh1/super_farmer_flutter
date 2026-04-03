@@ -672,4 +672,70 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navStats => 'Stats';
+
+  @override
+  String get premium => 'Premium';
+
+  @override
+  String get premiumUnlock => 'Unlock Premium';
+
+  @override
+  String get premiumDescription => 'Get the full Super Farmer experience!';
+
+  @override
+  String get premiumFeature3to4Players => '3-4 player mode';
+
+  @override
+  String get premiumFeatureAllAi => 'All AI difficulties';
+
+  @override
+  String get premiumFeatureAllThemes => 'All themes & unlockables';
+
+  @override
+  String get premiumFeatureStatistics => 'Statistics & replays';
+
+  @override
+  String get premiumFeatureAdFree => 'Ad-free experience';
+
+  @override
+  String get premiumPrice => '\$0.99 one-time';
+
+  @override
+  String get premiumBuy => 'Buy Premium — \$0.99';
+
+  @override
+  String get premiumRestore => 'Restore Purchase';
+
+  @override
+  String get premiumAlreadyUnlocked => 'Premium already unlocked!';
+
+  @override
+  String get premiumPurchaseSuccess =>
+      'Premium unlocked! Enjoy the full experience.';
+
+  @override
+  String get premiumPurchaseError => 'Purchase failed. Please try again.';
+
+  @override
+  String get premiumRequired => 'Premium Required';
+
+  @override
+  String get premiumRequiredMessage =>
+      'This feature requires Premium. Upgrade to unlock all features!';
+
+  @override
+  String get upgrade => 'Upgrade';
+
+  @override
+  String get removeAds => 'Remove Ads';
+
+  @override
+  String get adsRemovedWith => 'Ads removed with Premium';
+
+  @override
+  String get freeFeatures =>
+      'Free features: 2-player mode, Easy AI, basic theme';
+
+  @override
+  String get watchAdForHint => 'Watching a short ad...';
 }
