@@ -595,6 +595,74 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String get replays => 'Powtórki';
+
+  @override
+  String get importReplay => 'Importuj Powtórkę';
+
+  @override
+  String get pasteReplayJson => 'Wklej JSON powtórki tutaj...';
+
+  @override
+  String get replayImported => 'Powtórka zaimportowana pomyślnie';
+
+  @override
+  String get replayImportError => 'Nieprawidłowe dane powtórki';
+
+  @override
+  String get import_ => 'Importuj';
+
+  @override
+  String get noReplaysYet => 'Brak powtórek';
+
+  @override
+  String get noReplaysYetSubtitle => 'Rozegraj grę, aby nagrać powtórkę.';
+
+  @override
+  String get watchReplay => 'Obejrzyj Powtórkę';
+
+  @override
+  String get exportReplay => 'Eksportuj Powtórkę';
+
+  @override
+  String get deleteReplay => 'Usuń Powtórkę';
+
+  @override
+  String get replayCopied => 'Powtórka skopiowana do schowka';
+
+  @override
+  String get deleteReplayConfirm =>
+      'Spowoduje to trwałe usunięcie tej powtórki. Kontynuować?';
+
+  @override
+  String get delete => 'Usuń';
+
+  @override
+  String get replayViewer => 'Przeglądarka Powtórek';
+
+  @override
+  String turnOfTotal(int current, int total) {
+    return 'Tura $current z $total';
+  }
+
+  @override
+  String turnN(int n) {
+    return 'Tura $n';
+  }
+
+  @override
+  String get bred => 'Wyhodowane';
+
+  @override
+  String get lostLabel => 'Stracone';
+
+  @override
+  String get traded => 'Wymienione';
+
+  @override
+  String get speed => 'Prędkość';
+
+  @override
   String get navHome => 'Start';
 
   @override
