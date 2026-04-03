@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-/// Wrapper around Google Mobile Ads for interstitial ads.
+/// Wrapper around Google Mobile Ads for banner and interstitial ads.
 ///
 /// Uses test ad unit IDs in debug mode. In release, replace with real IDs.
 class AdService {
@@ -15,6 +16,14 @@ class AdService {
       return 'ca-app-pub-3940256099942544/1033173712'; // Android test
     } else {
       return 'ca-app-pub-3940256099942544/4411468910'; // iOS test
+    }
+  }
+
+  static String get bannerAdUnitId {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'ca-app-pub-3940256099942544/6300978111'; // Android test banner
+    } else {
+      return 'ca-app-pub-3940256099942544/2934735716'; // iOS test banner
     }
   }
 
@@ -77,5 +86,66 @@ class AdService {
     _interstitialAd?.dispose();
     _interstitialAd = null;
     _isAdLoaded = false;
+  }
+}
+
+/// A widget that displays a banner ad at the bottom of the screen.
+/// Hides itself if the user is premium or if the ad fails to load.
+class BannerAdWidget extends StatefulWidget {
+  const BannerAdWidget({super.key});
+
+  @override
+  State<BannerAdWidget> createState() => _BannerAdWidgetState();
+}
+
+class _BannerAdWidgetState extends State<BannerAdWidget> {
+  BannerAd? _bannerAd;
+  bool _isLoaded = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_bannerAd == null) {
+      _loadAd();
+    }
+  }
+
+  void _loadAd() {
+    final adSize = AdSize.banner;
+    _bannerAd = BannerAd(
+      adUnitId: AdService.bannerAdUnitId,
+      size: adSize,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          if (mounted) {
+            setState(() => _isLoaded = true);
+          }
+        },
+        onAdFailedToLoad: (ad, error) {
+          debugPrint('Banner ad failed to load: ${error.message}');
+          ad.dispose();
+          _bannerAd = null;
+        },
+      ),
+    )..load();
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isLoaded || _bannerAd == null) {
+      return const SizedBox.shrink();
+    }
+    return SizedBox(
+      width: _bannerAd!.size.width.toDouble(),
+      height: _bannerAd!.size.height.toDouble(),
+      child: AdWidget(ad: _bannerAd!),
+    );
   }
 }

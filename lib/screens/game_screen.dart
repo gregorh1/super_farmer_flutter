@@ -524,20 +524,31 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-      child: Row(
-        children: [
-          for (int i = 0; i < otherPlayers.length; i++) ...[
-            if (i > 0) const SizedBox(width: 6),
-            Expanded(
-              child: _CompactPlayerStrip(
-                player: game.players[otherPlayers[i]],
-                playerIndex: otherPlayers[i],
-                gameState: game,
-                onTrade: (rate) => ref.read(gameProvider.notifier).trade(rate),
-              ),
-            ),
-          ],
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: IntrinsicWidth(
+          child: Row(
+            children: [
+              for (int i = 0; i < otherPlayers.length; i++) ...[
+                if (i > 0) const SizedBox(width: 6),
+                Flexible(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: (MediaQuery.of(context).size.width - 16 - (otherPlayers.length - 1) * 6) / otherPlayers.length,
+                      minWidth: 100,
+                    ),
+                    child: _CompactPlayerStrip(
+                      player: game.players[otherPlayers[i]],
+                      playerIndex: otherPlayers[i],
+                      gameState: game,
+                      onTrade: (rate) => ref.read(gameProvider.notifier).trade(rate),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -917,6 +928,13 @@ class _CompactPlayerStrip extends StatelessWidget {
             border: Border.all(color: color.withValues(alpha: 0.4)),
             borderRadius: BorderRadius.circular(10),
             color: color.withValues(alpha: 0.05),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Row(
             children: [
@@ -933,7 +951,7 @@ class _CompactPlayerStrip extends StatelessWidget {
                   ),
                 ),
               const SizedBox(width: 4),
-              // Name
+              // Name — shrinks to fit available space
               Flexible(
                 child: Text(
                   player.name,
@@ -941,6 +959,7 @@ class _CompactPlayerStrip extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                   overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
               const SizedBox(width: 4),
@@ -953,19 +972,22 @@ class _CompactPlayerStrip extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 3),
-              // Tiny animal summary
-              ...PlayerArea.farmAnimals.map((a) => Padding(
-                    padding: const EdgeInsets.only(left: 1),
-                    child: SizedBox(
-                      width: 10,
-                      height: 10,
-                      child: Opacity(
-                        opacity: player.countOf(a) > 0 ? 1.0 : 0.25,
-                        child: SvgPicture.asset(a.assetPath,
-                            fit: BoxFit.contain),
+              // Tiny animal summary — fixed size row that won't overflow
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: PlayerArea.farmAnimals.map((a) => Padding(
+                      padding: const EdgeInsets.only(left: 1),
+                      child: SizedBox(
+                        width: 10,
+                        height: 10,
+                        child: Opacity(
+                          opacity: player.countOf(a) > 0 ? 1.0 : 0.25,
+                          child: SvgPicture.asset(a.assetPath,
+                              fit: BoxFit.contain),
+                        ),
                       ),
-                    ),
-                  )),
+                    )).toList(),
+              ),
             ],
           ),
         ),

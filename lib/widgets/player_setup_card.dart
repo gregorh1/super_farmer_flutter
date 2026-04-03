@@ -152,7 +152,7 @@ class PlayerSetupCard extends StatelessWidget {
                         },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? playerColor
@@ -180,7 +180,7 @@ class PlayerSetupCard extends StatelessWidget {
                                             ? Colors.white
                                             : isLockedDiff
                                                 ? theme.colorScheme.onSurface
-                                                    .withValues(alpha: 0.4)
+                                                    .withValues(alpha: isDark ? 0.6 : 0.4)
                                                 : theme.colorScheme.onSurface,
                                       ),
                                     ),
@@ -200,17 +200,17 @@ class PlayerSetupCard extends StatelessWidget {
                               Text(
                                 aiDiffDesc(diff),
                                 style: theme.textTheme.labelSmall?.copyWith(
-                                  fontSize: 9,
+                                  fontSize: 10,
                                   color: isSelected
                                       ? Colors.white.withValues(alpha: 0.8)
                                       : isLockedDiff
                                           ? theme.colorScheme.onSurface
-                                              .withValues(alpha: 0.3)
+                                              .withValues(alpha: isDark ? 0.5 : 0.3)
                                           : theme.colorScheme.onSurface
-                                              .withValues(alpha: 0.5),
+                                              .withValues(alpha: isDark ? 0.7 : 0.5),
                                 ),
                                 textAlign: TextAlign.center,
-                                maxLines: 2,
+                                maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],

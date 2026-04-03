@@ -191,7 +191,7 @@ class SettingsSheet extends ConsumerWidget {
                 children: [
                   Icon(Icons.volume_down,
                       size: 18,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                      color: theme.colorScheme.onSurface.withValues(alpha: theme.brightness == Brightness.dark ? 0.7 : 0.5)),
                   Expanded(
                     child: Slider(
                       value: settings.volume,
@@ -205,7 +205,7 @@ class SettingsSheet extends ConsumerWidget {
                   ),
                   Icon(Icons.volume_up,
                       size: 18,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                      color: theme.colorScheme.onSurface.withValues(alpha: theme.brightness == Brightness.dark ? 0.7 : 0.5)),
                 ],
               ),
             ),
